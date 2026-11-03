@@ -27,7 +27,7 @@ var TABS = {
   pending: 'Ожидают'
 };
 var COLS = {
-  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created'],
+  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang'],
   homework: ['id', 'student', 'date', 'title', 'focus', 'url', 'checked', 'tasks'],
   words: ['id', 'student', 'word', 'meaning', 'ru', 'example', 'cloze', 'lesson'],
   lessons: ['id', 'student', 'date', 'kind', 'note'],
@@ -149,6 +149,13 @@ function teacherAction(a, req) {
       writeRow('students', s); return { students: listStudents() };
     });
   }
+  if (a === 'setLang') {
+    return withLock(function () {
+      var s = mustStudent(req.student);
+      s.lang = req.lang === 'ru' ? 'ru' : 'en';
+      writeRow('students', s); return { students: listStudents() };
+    });
+  }
   if (a === 'resetInvite') {
     return withLock(function () {
       var s = mustStudent(req.student); s.tg_id = ''; s.tg_name = ''; s.invite = newCode();
@@ -240,10 +247,10 @@ function loadFor(s) {
 
 function listStudents() {
   return readAll('students').map(function (s) {
-    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '' };
+    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en' };
   });
 }
-function publicStudent(s) { return { id: s.id, name: s.name }; }
+function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en' }; }
 function mustStudent(id) {
   var s = findBy('students', 'id', String(id || ''));
   if (!s) throw new Error('Ученик не найден');
