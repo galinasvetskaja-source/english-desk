@@ -294,17 +294,23 @@ function el(tag,attrs,...kids){const e=document.createElement(tag);
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_RU=['янв.','февр.','марта','апр.','мая','июня','июля','авг.','сент.','окт.','нояб.','дек.'];
 function fmtDate(d,short){if(!d)return'';const [y,m,dd]=String(d).split('-').map(Number);if(!m)return d;
-  if(isTeacherView())return dd+' '+MONTHS_RU[m-1]+(short?'':' '+y);return dd+' '+MONTHS[m-1]+(short?'':' '+y);}
-function fmtStamp(iso){try{return new Date(iso).toLocaleString(isTeacherView()?'ru-RU':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return'';}}
+  if(RU())return dd+' '+MONTHS_RU[m-1]+(short?'':' '+y);return dd+' '+MONTHS[m-1]+(short?'':' '+y);}
+function fmtStamp(iso){try{return new Date(iso).toLocaleString(RU()?'ru-RU':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return'';}}
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
 const isTeacherView=()=>S.role==='teacher'&&!S.preview;
 const progView=()=>S.role==='teacher'?S.allProg:S.prog;
 const hwView=()=>S.role==='teacher'?S.allHw:S.myHw;
 const canSaveOwn=()=>S.role==='student'&&!S.noWrite&&!!S.db&&!!S.uid;
-const L=(en,ru)=>isTeacherView()?ru:en;
-function ruLessons(n){n=Math.abs(n);const a=n%10,b=n%100;if(a===1&&b!==11)return'урок';if(a>=2&&a<=4&&(b<12||b>14))return'урока';return'уроков';}
-function nLessons(n){return isTeacherView()?(n+' '+ruLessons(n)):(n+' '+(Math.abs(n)===1?'lesson':'lessons'));}
+// Язык интерфейса: учитель всегда видит русский; ученик (и учитель в режиме «глазами ученика») — язык из настроек ученика.
+const curStudent=()=>S.role==='teacher'?S.students.find(s=>s.id===S.sid):S.student;
+const uiLang=()=>isTeacherView()?'ru':(((curStudent()||{}).lang)==='ru'?'ru':'en');
+const RU=()=>uiLang()==='ru';
+const L=(en,ru)=>RU()?ru:en;
+function ruPl(n,one,few,many){n=Math.abs(n);const a=n%10,b=n%100;if(a===1&&b!==11)return one;if(a>=2&&a<=4&&(b<12||b>14))return few;return many;}
+function ruLessons(n){return ruPl(n,'урок','урока','уроков');}
+const nWords=n=>n+' '+(RU()?ruPl(n,'слово','слова','слов'):(Math.abs(n)===1?'word':'words'));
+function nLessons(n){return RU()?(n+' '+ruLessons(n)):(n+' '+(Math.abs(n)===1?'lesson':'lessons'));}
 function signed(n){return n<0?'−'+Math.abs(n):String(n);}
 const clone=o=>JSON.parse(JSON.stringify(o));
 
@@ -374,10 +380,10 @@ function keysOf(task,ti){const out=[];(task.items||[]).forEach((it,ii)=>{
 });return out;}
 const gradable=t=>['gap','tf','choice','match','transform'].includes(t.type);
 function isRight(key,val){if(val==null||val==='')return false;return key.ok.some(o=>norm(o)===norm(val));}
-function niceAnswer(task,key){if(task.type==='tf')return key.ok[0]==='T'?'True':'False';
+function niceAnswer(task,key){if(task.type==='tf')return key.ok[0]==='T'?L('True','Верно'):L('False','Неверно');
   if(task.type==='choice'){const ii=+key.k.split('-i')[1];return task.items[ii].o[+key.ok[0]];}
   return key.ok[0];}
-function niceVal(task,key,val){if(val==null||val==='')return'';if(task.type==='tf')return val==='T'?'True':'False';
+function niceVal(task,key,val){if(val==null||val==='')return'';if(task.type==='tf')return val==='T'?L('True','Верно'):L('False','Неверно');
   if(task.type==='choice'){const ii=+key.k.split('-i')[1];const o=task.items[ii].o[+val];return o==null?val:o;}return val;}
 function scoreOf(h,rec,which){let ok=0,tot=0;(h.tasks||[]).forEach((t,ti)=>{if(!gradable(t))return;keysOf(t,ti).forEach(k=>{tot++;if(isRight(k,(rec[which]||{})[k.k]))ok++;});});return{ok,tot};}
 function hwRec(id){const r=S.myHw[id]||(S.myHw[id]={state:'new',cur:{},first:{},checked:{}});r.cur=r.cur||{};r.first=r.first||{};r.checked=r.checked||{};return r;}
@@ -388,7 +394,7 @@ function maybeAutoFinish(h){const r=hwRec(h.id);if(r.state==='done')return;
 function finishHw(h,auto){const r=hwRec(h.id);
   (h.tasks||[]).forEach((t,ti)=>{keysOf(t,ti).forEach(k=>{if(!(k.k in r.first))r.first[k.k]=r.cur[k.k]==null?'':r.cur[k.k];});});
   r.state='done';r.finished=new Date().toISOString();saveHw(h.id);render();
-  toast('Homework finished!');}
+  toast(L('Homework finished!','Домашка готова!'));}
 function statusOf(h){
   if(h.checked)return['p-checked',L('Checked by teacher','Проверено')];
   let st;
@@ -441,15 +447,18 @@ function renderTop(){
       el('span',null,el('strong',{text:S.preview?'Просмотр глазами ученика':'Режим преподавателя'}),S.preview?' — так страницу видит ученик, сохранение отключено.':' — эту полосу и кнопки управления видите только вы.'),
       el('span',{class:'sp'}),
       el('button',{class:'btn t',id:'preview-toggle',onclick:()=>{S.preview=!S.preview;S.practice=null;render();}},S.preview?'Вернуться в режим учителя':'Посмотреть глазами ученика')));
-    $('#eyebrow').textContent=S.preview?'Your English desk':'Кабинет ученика';
-    $('#hello').textContent=S.preview?'Hi, '+firstName()+'!':(stName()||'Ваши ученики');
-    $('#sub').textContent=S.preview?'Your homework, words from our lessons and your lesson balance, all in one place.':'Домашка, слова и баланс занятий. Ученик видит эту же страницу на английском, без кнопок управления.';
+    $('#eyebrow').textContent=S.preview?L('Your English desk','Мой английский'):'Кабинет ученика';
+    $('#hello').textContent=S.preview?L('Hi, ','Привет, ')+firstName()+'!':(stName()||'Ваши ученики');
+    $('#sub').textContent=S.preview?subText():'Домашка, слова и баланс занятий. Ученик видит эту же страницу '+(((curStudent()||{}).lang)==='ru'?'на русском':'на английском')+', без кнопок управления.';
   }else{
-    $('#eyebrow').textContent='Your English desk';
-    $('#hello').textContent=firstName()?'Hi, '+firstName()+'!':'Hi!';
+    $('#eyebrow').textContent=L('Your English desk','Мой английский');
+    $('#hello').textContent=firstName()?L('Hi, ','Привет, ')+firstName()+'!':L('Hi!','Привет!');
+    $('#sub').textContent=subText();
   }
+  document.documentElement.lang=uiLang();
   renderNotice();
 }
+function subText(){return L('Your homework, words from our lessons and your lesson balance, all in one place.','Домашка, слова с наших уроков и баланс занятий — всё в одном месте.');}
 function renderNotice(){
   const n=$('#notice');if(!n)return;n.replaceChildren();
   if(S.offline)n.append(el('div',{class:'notice'},L('No connection right now. Your answers are kept and will be saved when the internet is back.','Нет связи с сервером. Изменения ученика сохранятся, когда появится интернет.')));
@@ -480,6 +489,10 @@ function studentBar(){
   if(S.students.length)top.append(el('button',{class:'btn t',type:'button',id:'st-add',onclick:()=>{S.open.st=!S.open.st;render();if(S.open.st)setTimeout(()=>{const i=$('#st-name');if(i)i.focus();},0);}},S.open.st?'Отмена':'+ Новый ученик'));
   box.append(top,addF);
   if(cur){
+    const lsel=el('select',{id:'st-lang','aria-label':'Язык кабинета ученика'},
+      el('option',{value:'en',selected:cur.lang!=='ru'},'английский'),el('option',{value:'ru',selected:cur.lang==='ru'},'русский'));
+    lsel.addEventListener('change',()=>tCall('setLang',{student:cur.id,lang:lsel.value},lsel.value==='ru'?'Кабинет '+cur.name+' теперь на русском':'Кабинет '+cur.name+' теперь на английском'));
+    box.append(el('div',{class:'row'},el('span',null,'Язык кабинета:'),lsel));
     if(cur.linked){
       box.append(el('div',{class:'row'},el('span',null,'✓ Подключён в Telegram'+(cur.tg_name?': '+cur.tg_name:'')),el('span',{class:'sp'}),
         confirmBtn('Отвязать и сделать новую ссылку','Точно? Ученик потеряет доступ, пока не откроет новую ссылку',()=>tCall('resetInvite',{student:cur.id},'Готово, новая ссылка ниже'),'st-reset')));
@@ -489,7 +502,7 @@ function studentBar(){
       inp.addEventListener('focus',()=>inp.select());
       box.append(el('p',{class:'small'},'Отправьте '+cur.name+' личную ссылку. Ученик откроет её в Telegram и сразу попадёт в свой кабинет:'),
         el('div',{class:'row'},inp,
-          el('button',{class:'btn t',type:'button',id:'st-share',onclick:()=>{const u='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Your English desk: homework, words and lessons');
+          el('button',{class:'btn t',type:'button',id:'st-share',onclick:()=>{const u='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(cur.lang==='ru'?'Ваш кабинет по английскому: домашка, слова и занятия':'Your English desk: homework, words and lessons');
             if(tgOK('6.1'))TG.openTelegramLink(u);else window.open(u,'_blank');}},'Отправить в Telegram'),
           el('button',{class:'btn t',type:'button',id:'st-copy',onclick:()=>{const done=()=>toast('Ссылка скопирована');
             if(navigator.clipboard)navigator.clipboard.writeText(link).then(done,()=>{inp.focus();inp.select();toast('Скопируйте выделенную ссылку');});else{inp.focus();inp.select();}}},'Скопировать')));
@@ -511,7 +524,7 @@ function renderSummary(){
   $('#summary').replaceChildren(
     el('div',{class:'stat'},el('span',{class:'label'},L('Homework done','Домашка сделана')),el('b',null,done+' / '+total),el('div',{class:'bar'},el('i',{style:'width:'+(total?Math.round(done/total*100):0)+'%'}))),
     el('div',{class:'stat'},el('span',{class:'label'},L('Words learned','Слов выучено')),el('b',null,known+' / '+S.words.length),el('div',{class:'bar'},el('i',{style:'width:'+(S.words.length?Math.round(known/S.words.length*100):0)+'%'}))),
-    el('div',{class:'stat'},el('span',{class:'label'},L('Lesson balance','Баланс')),el('b',{class:B.balance<0?'neg':null},signed(B.balance)),el('span',{class:'small muted'},B.balance<0?L('Not paid yet: ','Не оплачено: ')+B.unpaid.length:(L('lessons left','уроков осталось'))))
+    el('div',{class:'stat'},el('span',{class:'label'},L('Lesson balance','Баланс')),el('b',{class:B.balance<0?'neg':null},signed(B.balance)),el('span',{class:'small muted'},B.balance<0?L('Not paid yet: ','Не оплачено: ')+B.unpaid.length:(L('lessons left','осталось уроков'))))
   );
 }
 function confirmBtn(label,armedLabel,onGo,id){
@@ -525,12 +538,12 @@ function renderHomework(){
   if(T)sec.append(el('div',{class:'addrow'},addHomeworkForm(),importHomeworkForm()));
   const list=el('div',{class:'list'});
   const items=[...S.hw].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  if(!items.length)list.append(el('div',{class:'empty'},S.ready?(T?'Пока нет ни одного ДЗ.':'No homework here yet. Your teacher will add it after the lesson.'):'Loading your homework…'));
+  if(!items.length)list.append(el('div',{class:'empty'},S.ready?(T?'Пока нет ни одного ДЗ.':L('No homework here yet. Your teacher will add it after the lesson.','Домашки пока нет. Преподаватель добавит её после урока.')):L('Loading your homework…','Загружаю домашку…')));
   for(const h of items){
     const [cls,txt]=statusOf(h);
     const card=el('article',{class:'hw'},
       el('div',{class:'hw-top'},
-        el('div',null,el('span',{class:'date'},fmtDate(h.date)),el('h3',null,h.title||'Homework'),h.focus?el('p',{class:'muted small'},h.focus):null),
+        el('div',null,el('span',{class:'date'},fmtDate(h.date)),el('h3',null,h.title||L('Homework','Домашка')),h.focus?el('p',{class:'muted small'},h.focus):null),
         el('span',{class:'pill '+cls},txt)));
     const row=el('div',{class:'row'});
     if(h.tasks){
@@ -541,15 +554,15 @@ function renderHomework(){
         row.append(el('button',{class:'btn primary',type:'button',id:'open-'+h.id,onclick:()=>{S.openHw=h.id;render();window.scrollTo(0,0);}},rec&&rec.state!=='new'?'Посмотреть ответы и ошибки':'Открыть задания'));
       }else{
         const st=rec&&rec.state;
-        row.append(el('button',{class:'btn primary',type:'button',id:'open-'+h.id,onclick:()=>{S.openHw=h.id;render();window.scrollTo(0,0);}},st==='done'?'Open again':st==='doing'?'Continue':'Start homework'));
+        row.append(el('button',{class:'btn primary',type:'button',id:'open-'+h.id,onclick:()=>{S.openHw=h.id;render();window.scrollTo(0,0);}},st==='done'?L('Open again','Открыть снова'):st==='doing'?L('Continue','Продолжить'):L('Start homework','Начать')));
       }
     }else if(h.url){
       row.append(el('a',{class:'btn primary',href:h.url,target:'_blank',rel:'noopener'},L('Open homework ↗','Открыть ДЗ ↗')));
       const mine=progView().hw[h.id]||{};
       if(!T){const dis=!canSaveOwn();
         row.append(
-          el('button',{class:'btn'+(mine.state==='doing'?' on':''),type:'button',disabled:dis||h.checked,id:'doing-'+h.id,onclick:()=>setHw(h.id,{state:mine.state==='doing'?'new':'doing'})},'I started'),
-          el('button',{class:'btn'+(mine.state==='done'?' on':''),type:'button',disabled:dis||h.checked,id:'done-'+h.id,onclick:()=>setHw(h.id,{state:mine.state==='done'?'new':'done'})},mine.state==='done'?'✓ Done':'I finished it'));
+          el('button',{class:'btn'+(mine.state==='doing'?' on':''),type:'button',disabled:dis||h.checked,id:'doing-'+h.id,onclick:()=>setHw(h.id,{state:mine.state==='doing'?'new':'doing'})},L('I started','В процессе')),
+          el('button',{class:'btn'+(mine.state==='done'?' on':''),type:'button',disabled:dis||h.checked,id:'done-'+h.id,onclick:()=>setHw(h.id,{state:mine.state==='done'?'new':'done'})},mine.state==='done'?L('✓ Done','✓ Сделано'):L('I finished it','Сделано')));
       }else if(mine.at)card.append(el('p',{class:'small muted'},'Ученик отметил вручную: '+fmtStamp(mine.at)+' (ответы этого ДЗ не сохраняются — оно в старом формате)'));
     }
     card.append(row);
@@ -561,10 +574,10 @@ function renderHomework(){
         confirmBtn('Удалить','Точно удалить?',()=>tWrite(()=>S.db.doc('homework/'+h.id).delete(),'ДЗ удалено'),'del-'+h.id)));
     }else if(!h.tasks){
       const draftKey='n-'+h.id;const mine=progView().hw[h.id]||{};const val=draftKey in S.drafts?S.drafts[draftKey]:(mine.note||'');
-      const ta=el('textarea',{id:'note-'+h.id,placeholder:'Was something difficult? Write it here.',disabled:!canSaveOwn()});ta.value=val;
+      const ta=el('textarea',{id:'note-'+h.id,placeholder:L('Was something difficult? Write it here.','Что-то было трудно? Напишите здесь.'),disabled:!canSaveOwn()});ta.value=val;
       ta.addEventListener('input',()=>{S.drafts[draftKey]=ta.value;});
-      ta.addEventListener('change',()=>{delete S.drafts[draftKey];if((mine.note||'')!==ta.value){setHw(h.id,{note:ta.value.trim(),state:mine.state||'new'});toast('Note saved');}});
-      card.append(el('label',{class:'note small muted',for:'note-'+h.id},'Notes',ta));
+      ta.addEventListener('change',()=>{delete S.drafts[draftKey];if((mine.note||'')!==ta.value){setHw(h.id,{note:ta.value.trim(),state:mine.state||'new'});toast(L('Note saved','Заметка сохранена'));}});
+      card.append(el('label',{class:'note small muted',for:'note-'+h.id},L('Notes','Заметки'),ta));
     }
     list.append(card);
   }
@@ -596,25 +609,25 @@ function renderHwOpen(){
   const rec=hwRec(h.id);const ro=S.role==='teacher';// teacher preview: interactive but not saved
   (h.tasks||[]).forEach((t,ti)=>sec.append(renderTask(h,t,ti,rec,ro)));
   if(rec.state==='done'){
-    sec.append(el('div',{class:'finish'},el('strong',null,'✓ Finished'),el('span',{class:'small'},'You can still change answers and check again.')));
+    sec.append(el('div',{class:'finish'},el('strong',null,L('✓ Finished','✓ Готово')),el('span',{class:'small'},L('You can still change answers and check again.','Ответы ещё можно поменять и проверить снова.'))));
   }else{
-    sec.append(el('div',{class:'row'},el('button',{class:'btn primary',type:'button',id:'hw-finish',disabled:!ro&&!canSaveOwn(),onclick:()=>{if(ro){toast('Preview: nothing is saved');return;}finishHw(h,false);}},'Finish')));
+    sec.append(el('div',{class:'row'},el('button',{class:'btn primary',type:'button',id:'hw-finish',disabled:!ro&&!canSaveOwn(),onclick:()=>{if(ro){toast(L('Preview: nothing is saved','Просмотр: ничего не сохраняется'));return;}finishHw(h,false);}},L('Finish','Готово'))));
   }
-  const nk='hwnote-'+h.id;const ta=el('textarea',{class:'txt',id:nk,placeholder:'Was something difficult? Write it here.'});
+  const nk='hwnote-'+h.id;const ta=el('textarea',{class:'txt',id:nk,placeholder:L('Was something difficult? Write it here.','Что-то было трудно? Напишите здесь.')});
   ta.value=nk in S.drafts?S.drafts[nk]:(rec.note||'');
   ta.addEventListener('input',()=>{S.drafts[nk]=ta.value;});
-  ta.addEventListener('change',()=>{delete S.drafts[nk];if(ro)return;rec.note=ta.value.trim();touchHw(h.id);saveHw(h.id);toast('Note saved');});
-  sec.append(el('label',{class:'note small muted',for:nk},'Notes',ta));
+  ta.addEventListener('change',()=>{delete S.drafts[nk];if(ro)return;rec.note=ta.value.trim();touchHw(h.id);saveHw(h.id);toast(L('Note saved','Заметка сохранена'));});
+  sec.append(el('label',{class:'note small muted',for:nk},L('Notes','Заметки'),ta));
   return sec;
 }
 function taskHead(t,ti){
   const n=t.type==='link'?null:(t.num||null);
   return [el('h3',null,(n?n+'. ':'')+(t.title||'')),t.instr?el('p',{class:'instr'},t.instr):null,t.rule?el('div',{class:'rule'},t.rule):null,
     t.passage?el('div',{class:'passage'},String(t.passage).split(/\n\n+/).map(p=>el('p',null,p))):null,
-    t.bank?el('div',{class:'bank','aria-label':'Word bank'},t.bank.map(w=>el('span',null,w))):null];
+    t.bank?el('div',{class:'bank','aria-label':L('Word bank','Слова для подсказки')},t.bank.map(w=>el('span',null,w))):null];
 }
 function renderTask(h,t,ti,rec,ro){
-  if(t.type==='link')return el('div',{class:'linkcard'},el('span',{class:'label'},t.title||'Watch first'),t.text?el('p',null,t.text):null,el('a',{class:'btn',href:t.url,target:'_blank',rel:'noopener',style:'align-self:flex-start'},t.label||'Open ↗'));
+  if(t.type==='link')return el('div',{class:'linkcard'},el('span',{class:'label'},t.title||L('Watch first','Сначала посмотрите')),t.text?el('p',null,t.text):null,el('a',{class:'btn',href:t.url,target:'_blank',rel:'noopener',style:'align-self:flex-start'},t.label||L('Open ↗','Открыть ↗')));
   const box=el('div',{class:'task',id:'task-'+ti},...taskHead(t,ti));
   const keys=keysOf(t,ti);const shown=!!rec.checked[ti]&&!rec.dirty?.[ti];
   const setVal=(k,v)=>{rec.cur[k]=v;if(!ro){touchHw(h.id);rec.dirty=rec.dirty||{};rec.dirty[ti]=true;saveHw(h.id);if(t.type==='open')maybeAutoFinish(h);}};
@@ -626,27 +639,27 @@ function renderTask(h,t,ti,rec,ro){
     const name='r-'+h.id+'-'+ti+'-'+ii;
     if(t.type==='tf'||t.type==='choice'){
       li.append(el('p',null,(ii+1)+'. '+it.s));
-      const opts=t.type==='tf'?[['T','True'],['F','False']]:it.o.map((o,oi)=>[String(oi),o]);
+      const opts=t.type==='tf'?[['T',L('True','Верно')],['F',L('False','Неверно')]]:it.o.map((o,oi)=>[String(oi),o]);
       li.append(el('div',{class:'opts'},opts.map(([v,lab])=>{const inp=el('input',{type:'radio',name,value:v,id:name+'-'+v,checked:rec.cur[myKeys[0].k]===v});
         inp.addEventListener('change',()=>setVal(myKeys[0].k,v));return el('label',{class:'opt',for:name+'-'+v},inp,lab);})));
     }else if(t.type==='gap'){
       const parts=gapParts(it.s);const line=el('p',{class:'gapline'},(ii+1)+'. ');
       parts.forEach((p,pi)=>{if(pi%2===0){line.append(p);return;}const k='t'+ti+'-i'+ii+'-g'+((pi-1)/2);
-        const inp=el('input',{type:'text',id:name+'-'+pi,autocomplete:'off',autocapitalize:'off',spellcheck:'false','aria-label':'gap'});inp.value=rec.cur[k]||'';
+        const inp=el('input',{type:'text',id:name+'-'+pi,autocomplete:'off',autocapitalize:'off',spellcheck:'false','aria-label':L('gap','пропуск')});inp.value=rec.cur[k]||'';
         inp.addEventListener('input',()=>setVal(k,inp.value));line.append(inp);});
       li.append(line);
     }else if(t.type==='match'){
       const opts=t.options||(t.items.map(x=>x.r));
-      const sel=el('select',{id:name,'aria-label':it.l},el('option',{value:''},'— choose —'),opts.map(o=>el('option',{value:o,selected:rec.cur[myKeys[0].k]===o},o)));
+      const sel=el('select',{id:name,'aria-label':it.l},el('option',{value:''},L('— choose —','— выберите —')),opts.map(o=>el('option',{value:o,selected:rec.cur[myKeys[0].k]===o},o)));
       sel.addEventListener('change',()=>setVal(myKeys[0].k,sel.value));
       li.classList.add('match');li.append(el('p',null,el('strong',null,(ii+1)+'. '+it.l)),sel);
     }else if(t.type==='transform'||t.type==='open'){
       li.append(el('p',null,(ii+1)+'. '+it.s));
-      const inp=t.type==='open'?el('textarea',{class:'txt',id:name,placeholder:it.ph||'Write here'}):el('input',{type:'text',class:'txt',id:name,autocomplete:'off',placeholder:it.start||''});
+      const inp=t.type==='open'?el('textarea',{class:'txt',id:name,placeholder:it.ph||L('Write here','Напишите здесь')}):el('input',{type:'text',class:'txt',id:name,autocomplete:'off',placeholder:it.start||''});
       inp.value=rec.cur[myKeys[0].k]||'';inp.addEventListener('input',()=>setVal(myKeys[0].k,inp.value));li.append(inp);
     }
     if(shown&&gradable(t)){const wrong=myKeys.filter(k=>!isRight(k,rec.cur[k.k]));
-      if(wrong.length)li.append(el('p',{class:'fix'},'Correct answer: ',wrong.map((k,i)=>[i?', ':'',el('b',null,niceAnswer(t,k))])));}
+      if(wrong.length)li.append(el('p',{class:'fix'},L('Correct answer: ','Правильно: '),wrong.map((k,i)=>[i?', ':'',el('b',null,niceAnswer(t,k))])));}
     ul.append(li);
   });
   box.append(ul);
@@ -656,7 +669,7 @@ function renderTask(h,t,ti,rec,ro){
       else rec.checked[ti]=true;
       if(rec.dirty)delete rec.dirty[ti];
       if(!ro){saveHw(h.id);maybeAutoFinish(h);}render();
-      const b=document.getElementById('task-'+ti);if(b)b.scrollIntoView({block:'nearest'});}},'Check answers')));
+      const b=document.getElementById('task-'+ti);if(b)b.scrollIntoView({block:'nearest'});}},L('Check answers','Проверить'))));
   }
   return box;
 }
@@ -703,10 +716,12 @@ function renderReview(h,sec){
 
 /* ---------- words ---------- */
 /* ---------- words: language, spaced repetition ---------- */
-function getLang(){try{return localStorage.getItem('kd-lang')||'en';}catch(e){return'en';}}
+// Язык подсказок к словам (не путать с языком интерфейса). Если ученик не выбирал, в русском кабинете — с переводом.
+function getLang(){try{return localStorage.getItem('kd-lang')||null;}catch(e){return null;}}
 S.lang=getLang();
+const hintLang=()=>S.lang||(RU()?'ru':'en');
 function setLang(v){S.lang=v;try{localStorage.setItem('kd-lang',v);}catch(e){}render();}
-function hintOf(w){if(!w)return'';return S.lang==='ru'&&w.ru?w.ru:(w.meaning||'');}
+function hintOf(w){if(!w)return'';return hintLang()==='ru'&&w.ru?w.ru:(w.meaning||'');}
 const SRS_DAYS=[0,1,3,7,14,30];const NEW_PER_SESSION=8;
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const srsOf=id=>(progView().srs||{})[id]||null;
@@ -718,33 +733,33 @@ function dueList(){const t=today();const old=[],fresh=[];
 function srsAnswer(id,ok){if(!canSaveOwn())return;const st=S.prog.srs||(S.prog.srs={});const s=st[id]||{box:0};
   const box=ok?Math.min((s.box||0)+1,5):0;st[id]={box,due:ok?addDays(SRS_DAYS[box]):today(),last:today()};queueWrite('progress/'+S.uid,()=>S.prog,800);}
 function lastLessonWords(){let last='';for(const w of S.words)if((w.lesson||'')>last)last=w.lesson||'';return S.words.filter(w=>(w.lesson||'')===last);}
-function dots(id){const s=srsOf(id);const b=s?s.box:0;return el('span',{class:'dots',title:s?('Level '+b+' of 5'):'New word','aria-label':s?('Level '+b+' of 5'):'New word'},Array.from({length:5},(_,i)=>el('i',{class:i<b?'on':null})));}
+function dots(id){const s=srsOf(id);const b=s?s.box:0;const t=s?L('Level '+b+' of 5','Уровень '+b+' из 5'):L('New word','Новое слово');return el('span',{class:'dots',title:t,'aria-label':t},Array.from({length:5},(_,i)=>el('i',{class:i<b?'on':null})));}
 function startGames(ids){S.practice={base:ids,onlyNew:false,mode:null};render();window.scrollTo(0,0);}
 function startReview(){const d=dueList();if(!d.today.length)return;S.practice={base:d.today.map(w=>w.id),mode:'review',st:{queue:d.today.map(w=>w.id),done:{},first:{},show:false,total:d.today.length,knew:0}};render();window.scrollTo(0,0);}
 
-function langToggle(){return el('div',{class:'seg',role:'group','aria-label':'Hints language'},
-  el('button',{type:'button',id:'lang-ru','aria-pressed':S.lang==='ru'?'true':'false',onclick:()=>setLang('ru')},'RU + EN'),
-  el('button',{type:'button',id:'lang-en','aria-pressed':S.lang==='en'?'true':'false',onclick:()=>setLang('en')},'EN + EN'));}
+function langToggle(){return el('div',{class:'seg',role:'group','aria-label':L('Hints language','Язык подсказок')},
+  el('button',{type:'button',id:'lang-ru','aria-pressed':hintLang()==='ru'?'true':'false',onclick:()=>setLang('ru')},'RU + EN'),
+  el('button',{type:'button',id:'lang-en','aria-pressed':hintLang()==='en'?'true':'false',onclick:()=>setLang('en')},'EN + EN'));}
 
 function renderWords(){
   const sec=el('section',{'aria-labelledby':'tab-words'});const T=isTeacherView();const p=progView();const wst=p.wstat||{};
   if(S.practice){sec.append(renderPractice());return sec;}
   if(T)sec.append(el('div',{class:'addrow'},addWordForm(),importWordsForm()));
-  if(!S.words.length){sec.append(el('div',{class:'empty'},S.ready?(T?'Слов пока нет.':'No words yet. Words from our lessons will appear here.'):'Loading words…'));return sec;}
+  if(!S.words.length){sec.append(el('div',{class:'empty'},S.ready?(T?'Слов пока нет.':L('No words yet. Words from our lessons will appear here.','Слов пока нет. Здесь появятся слова с наших уроков.')):L('Loading words…','Загружаю слова…')));return sec;}
   const D=dueList();const lastW=lastLessonWords();
   sec.append(el('div',{class:'review'},
     el('div',{class:'review-main'},el('span',{class:'label'},L('Today’s review','Повторение на сегодня')),
       el('span',{class:'big'},String(D.today.length)),
-      el('span',{class:'small muted'},D.today.length?L(D.old.length+' to repeat · '+Math.min(D.fresh.length,NEW_PER_SESSION)+' new','повторить '+D.old.length+' · новых '+Math.min(D.fresh.length,NEW_PER_SESSION)):L('All done for today. Come back tomorrow!','На сегодня всё повторено.'))),
+      el('span',{class:'small muted'},D.today.length?L(D.old.length+' to repeat · '+Math.min(D.fresh.length,NEW_PER_SESSION)+' new','повторить '+D.old.length+' · новых '+Math.min(D.fresh.length,NEW_PER_SESSION)):L('All done for today. Come back tomorrow!',T?'На сегодня всё повторено.':'На сегодня всё повторено. Возвращайтесь завтра!'))),
     el('div',{class:'review-actions'},
       el('button',{class:'btn primary',type:'button',id:'start-review',disabled:!D.today.length,onclick:startReview},L('Start review','Начать повторение')),
       el('button',{class:'btn',type:'button',id:'last-lesson',disabled:!lastW.length,onclick:()=>startGames(lastW.map(w=>w.id))},L('Last lesson words ('+lastW.length+')','Слова с последнего урока ('+lastW.length+')')),
       el('button',{class:'btn',type:'button',id:'all-games',onclick:()=>startGames(S.words.map(w=>w.id))},L('Games with all words','Игры со всеми словами')))));
-  const search=el('input',{type:'search',id:'w-search',placeholder:L('Find a word','Найти слово'),value:S.q,'aria-label':'Find a word'});
+  const search=el('input',{type:'search',id:'w-search',placeholder:L('Find a word','Найти слово'),value:S.q,'aria-label':L('Find a word','Найти слово')});
   search.addEventListener('input',()=>{S.q=search.value;const pos=search.selectionStart;render();const s=$('#w-search');if(s){s.focus();try{s.setSelectionRange(pos,pos);}catch(e){}}});
   const opts=[['all',L('All words','Все слова')],['last',L('Last lesson','Последний урок')],['due',L('To review today','На сегодня')],['hard',L('Tricky words','Трудные слова')],['new',L('Not learned yet','Ещё не выучены')],['learned',L('Learned','Выучены')]];
   if(!opts.some(o=>o[0]===S.lesson))S.lesson='all';
-  const sel=el('select',{id:'w-filter','aria-label':'Filter'},opts.map(([v,t])=>el('option',{value:v,selected:S.lesson===v},t)));
+  const sel=el('select',{id:'w-filter','aria-label':L('Filter','Фильтр')},opts.map(([v,t])=>el('option',{value:v,selected:S.lesson===v},t)));
   sel.addEventListener('change',()=>{S.lesson=sel.value;render();});
   sec.append(el('div',{class:'tools'},search,sel,langToggle()));
   const lastIds=new Set(lastW.map(w=>w.id));const dueIds=new Set(D.today.map(w=>w.id));
@@ -754,7 +769,7 @@ function renderWords(){
   if(S.lesson==='hard')list.sort((a,b)=>(wst[b.id]||[0,0])[1]-(wst[a.id]||[0,0])[1]);else list.sort((a,b)=>ansOf(a).localeCompare(ansOf(b)));
   if(T&&((p.best||{}).speed||Object.keys(wst).length))sec.append(el('p',{class:'small muted'},'Лучший результат в Speed round: '+((p.best||{}).speed||0)+'. У каждого слова: уровень запоминания (точки) и ✓/✗ в играх.'));
   if(!list.length){sec.append(el('div',{class:'empty'},L('No words here.','Здесь пока нет слов.')));return sec;}
-  sec.append(el('div',{class:'row'},el('span',{class:'small muted'},list.length+L(' words',' слов')),
+  sec.append(el('div',{class:'row'},el('span',{class:'small muted'},nWords(list.length)),
     list.length!==S.words.length?el('button',{class:'btn',type:'button',id:'play-filtered',onclick:()=>startGames(list.map(w=>w.id))},L('Play with these words','Игры с этими словами')):null));
   const box=el('div',{class:'words'});
   for(const w of list){
@@ -769,20 +784,20 @@ function renderWords(){
 }
 function renderSrs(P){
   const st=P.st;const id=st.queue[0];const w=S.words.find(x=>x.id===id);
-  if(!w){const D=dueList();return el('div',{class:'card'},el('h2',null,'Done for today!'),el('p',{class:'muted'},'You reviewed '+st.total+' words and knew '+st.knew+' the first time.'),
-    el('p',{class:'muted small'},'The words you knew come back later: in 1, 3, 7, 14 and 30 days. The words you missed come back sooner.'),
-    D.today.length?el('button',{class:'btn',type:'button',id:'review-more',onclick:startReview},'Review '+D.today.length+' more'):null);}
+  if(!w){const D=dueList();return el('div',{class:'card'},el('h2',null,L('Done for today!','На сегодня всё!')),el('p',{class:'muted'},L('You reviewed '+st.total+' words and knew '+st.knew+' the first time.','Повторено слов: '+st.total+'. С первого раза вспомнили: '+st.knew+'.')),
+    el('p',{class:'muted small'},L('The words you knew come back later: in 1, 3, 7, 14 and 30 days. The words you missed come back sooner.','Слова, которые вы вспомнили, вернутся позже: через 1, 3, 7, 14 и 30 дней. Те, что не вспомнили, вернутся раньше.')),
+    D.today.length?el('button',{class:'btn',type:'button',id:'review-more',onclick:startReview},L('Review '+D.today.length+' more','Повторить ещё '+D.today.length)):null);}
   const answer=ok=>{if(!(id in st.first)){st.first[id]=ok;srsAnswer(id,ok);if(ok)st.knew++;record(id,ok);}
     st.queue.shift();if(!ok)st.queue.push(id);st.show=false;render();};
   const done=st.total-new Set(st.queue).size;
   return el('div',{class:'list'},el('div',{class:'row'},langToggle()),
     el('div',{class:'bar wide'},el('i',{style:'width:'+Math.round(done/st.total*100)+'%'})),
-    el('div',{class:'card'},el('span',{class:'label'},done+' of '+st.total+(srsOf(id)?'':' · new word')),
+    el('div',{class:'card'},el('span',{class:'label'},done+L(' of ',' из ')+st.total+(srsOf(id)?'':L(' · new word',' · новое слово'))),
       el('p',{class:'meaning'},hintOf(w)),
-      st.show?el('span',{class:'answer'},w.word):el('p',{class:'muted small'},'Remember the word and say it out loud.'),
+      st.show?el('span',{class:'answer'},w.word):el('p',{class:'muted small'},L('Remember the word and say it out loud.','Вспомните слово и скажите его вслух.')),
       st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w)):null,
-      st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'rv-again',onclick:()=>answer(false)},'I didn’t know'),el('button',{class:'btn primary',type:'button',id:'rv-knew',onclick:()=>answer(true)},'I knew it')):
-        el('button',{class:'btn primary',type:'button',id:'rv-show',onclick:()=>{st.show=true;render();}},'Show the word')));
+      st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'rv-again',onclick:()=>answer(false)},L('I didn’t know','Не помню')),el('button',{class:'btn primary',type:'button',id:'rv-knew',onclick:()=>answer(true)},L('I knew it','Помню'))):
+        el('button',{class:'btn primary',type:'button',id:'rv-show',onclick:()=>{st.show=true;render();}},L('Show the word','Показать слово'))));
 }
 
 /* ---------- practice modes ---------- */
@@ -793,34 +808,34 @@ const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math
 function record(id,ok){if(!canSaveOwn())return;const st=S.prog.wstat||(S.prog.wstat={});const v=st[id]||[0,0];st[id]=ok?[v[0]+1,v[1]]:[v[0],v[1]+1];queueWrite('progress/'+S.uid,()=>S.prog,1500);}
 function stopTimers(){const P=S.practice;if(P&&P.timer){clearInterval(P.timer);P.timer=null;}}
 const MODES=[
-  {id:'cards',t:'Flashcards',d:'See the meaning, say the word, flip the card.',min:1,ok:()=>true},
-  {id:'context',t:'In context',d:'Read a sentence and type the missing word.',min:1,ok:w=>!!w.cloze},
-  {id:'speed',t:'Speed round',d:'60 seconds. Pick the right word as fast as you can.',min:4,ok:()=>true},
-  {id:'match',t:'Match pairs',d:'Tap a word, then tap its meaning. Try to make no mistakes.',min:3,ok:()=>true},
-  {id:'cross',t:'Crossword',d:'A small crossword. The clues are the meanings.',min:4,ok:w=>lettersOnly(ansOf(w))},
-  {id:'spell',t:'Spelling',d:'Build the word from mixed-up letters.',min:1,ok:w=>lettersOnly(ansOf(w))}
+  {id:'cards',t:'Flashcards',tr:'Карточки',d:'See the meaning, say the word, flip the card.',dr:'Смотрите на значение, называйте слово, переворачивайте карточку.',min:1,ok:()=>true},
+  {id:'context',t:'In context',tr:'В предложении',d:'Read a sentence and type the missing word.',dr:'Прочитайте предложение и впишите пропущенное слово.',min:1,ok:w=>!!w.cloze},
+  {id:'speed',t:'Speed round',tr:'На скорость',d:'60 seconds. Pick the right word as fast as you can.',dr:'60 секунд. Выбирайте нужное слово как можно быстрее.',min:4,ok:()=>true},
+  {id:'match',t:'Match pairs',tr:'Пары',d:'Tap a word, then tap its meaning. Try to make no mistakes.',dr:'Нажмите на слово, потом на его значение. Постарайтесь без ошибок.',min:3,ok:()=>true},
+  {id:'cross',t:'Crossword',tr:'Кроссворд',d:'A small crossword. The clues are the meanings.',dr:'Небольшой кроссворд. Подсказки — значения слов.',min:4,ok:w=>lettersOnly(ansOf(w))},
+  {id:'spell',t:'Spelling',tr:'Правописание',d:'Build the word from mixed-up letters.',dr:'Соберите слово из перепутанных букв.',min:1,ok:w=>lettersOnly(ansOf(w))}
 ];
 function poolOf(P){let ws=P.base.map(id=>S.words.find(w=>w.id===id)).filter(Boolean);
   if(P.onlyNew){const n=ws.filter(w=>!learned(w.id));if(n.length)ws=n;}return ws;}
 function renderPractice(){
   const P=S.practice;
-  const back=el('button',{class:'btn',type:'button',id:'stop-practice',onclick:()=>{stopTimers();if(P.mode&&P.mode!=='review'){P.mode=null;P.st=null;}else S.practice=null;render();}},P.mode&&P.mode!=='review'?'← Choose another game':'← Back to words');
+  const back=el('button',{class:'btn',type:'button',id:'stop-practice',onclick:()=>{stopTimers();if(P.mode&&P.mode!=='review'){P.mode=null;P.st=null;}else S.practice=null;render();}},P.mode&&P.mode!=='review'?L('← Choose another game','← Другая игра'):L('← Back to words','← К словам'));
   if(P.mode==='review')return el('div',{class:'list'},el('div',null,back),renderSrs(P));
   const pool=poolOf(P);
   if(!P.mode)return el('div',{class:'list'},el('div',{class:'row'},back,langToggle()),chooser(P,pool));
   const M=MODES.find(m=>m.id===P.mode);
-  return el('div',{class:'list'},el('div',{class:'row'},back,el('span',{class:'label'},M.t)),VIEWS[P.mode](P,pool.filter(M.ok)));
+  return el('div',{class:'list'},el('div',{class:'row'},back,el('span',{class:'label'},L(M.t,M.tr))),VIEWS[P.mode](P,pool.filter(M.ok)));
 }
 function chooser(P,pool){
   const cb=el('input',{type:'checkbox',id:'only-new',checked:!!P.onlyNew});cb.addEventListener('change',()=>{P.onlyNew=cb.checked;render();});
   return el('div',{class:'list'},
-    el('div',{class:'row'},el('p',null,el('strong',null,pool.length+' words'),' in this practice'),el('label',{class:'chk',for:'only-new'},cb,'Only words not learned yet')),
+    el('div',{class:'row'},el('p',null,el('strong',null,nWords(pool.length)),L(' in this practice',' в тренировке')),el('label',{class:'chk',for:'only-new'},cb,L('Only words not learned yet','Только невыученные'))),
     el('div',{class:'modes'},MODES.map(m=>{const n=pool.filter(m.ok).length;const dis=n<m.min;
       return el('button',{class:'mode',type:'button',id:'mode-'+m.id,disabled:dis,onclick:()=>{P.mode=m.id;P.st=INITS[m.id](pool.filter(m.ok));render();window.scrollTo(0,0);}},
-        el('span',{class:'mode-t'},m.t),el('span',{class:'mode-d'},m.d),el('span',{class:'mode-n'},dis?'Needs '+m.min+'+ words':n+' words'));})));
+        el('span',{class:'mode-t'},L(m.t,m.tr)),el('span',{class:'mode-d'},L(m.d,m.dr)),el('span',{class:'mode-n'},dis?L('Needs '+m.min+'+ words','Нужно от '+m.min+' слов'):nWords(n)));})));
 }
 function endCard(title,lines,again){return el('div',{class:'card'},el('h2',null,title),lines.map(l=>el('p',{class:'muted'},l)),
-  el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn primary',type:'button',id:'play-again',onclick:again},'Play again')));}
+  el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn primary',type:'button',id:'play-again',onclick:again},L('Play again','Ещё раз'))));}
 function restart(P,pool){return()=>{stopTimers();P.st=INITS[P.mode](pool);render();};}
 
 const INITS={
@@ -836,68 +851,68 @@ const INITS={
 const VIEWS={
 /* flashcards */
 cards(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
-  if(!w)return endCard('Finished!',['You went through '+st.ids.length+' cards.','You knew '+st.knew+'.'],restart(P,pool));
+  if(!w)return endCard(L('Finished!','Готово!'),[L('You went through '+st.ids.length+' cards.','Пройдено карточек: '+st.ids.length+'.'),L('You knew '+st.knew+'.','Вспомнили: '+st.knew+'.')],restart(P,pool));
   const front=st.dir==='mw'?el('p',{class:'meaning'},hintOf(w)):el('span',{class:'answer'},w.word);
   const backSide=st.dir==='mw'?el('span',{class:'answer'},w.word):el('p',{class:'meaning'},hintOf(w));
   const next=k=>{record(w.id,k);if(k)st.knew++;st.i++;st.show=false;render();};
   return el('div',{class:'list'},
-    el('div',{class:'row'},el('button',{class:'btn',type:'button',id:'flip-dir',onclick:()=>{st.dir=st.dir==='mw'?'wm':'mw';st.show=false;render();}},st.dir==='mw'?'Show the word first':'Show the meaning first')),
-    el('div',{class:'card'},el('span',{class:'label'},'Card '+(st.i+1)+' of '+st.ids.length),front,
-      st.show?backSide:el('p',{class:'muted small'},st.dir==='mw'?'Say the word out loud, then flip.':'Explain the word, then flip.'),
+    el('div',{class:'row'},el('button',{class:'btn',type:'button',id:'flip-dir',onclick:()=>{st.dir=st.dir==='mw'?'wm':'mw';st.show=false;render();}},st.dir==='mw'?L('Show the word first','Сначала слово'):L('Show the meaning first','Сначала значение'))),
+    el('div',{class:'card'},el('span',{class:'label'},L('Card '+(st.i+1)+' of '+st.ids.length,'Карточка '+(st.i+1)+' из '+st.ids.length)),front,
+      st.show?backSide:el('p',{class:'muted small'},st.dir==='mw'?L('Say the word out loud, then flip.','Скажите слово вслух и переверните.'):L('Explain the word, then flip.','Объясните слово и переверните.')),
       st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w)):null,
-      st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'p-again',onclick:()=>next(false)},'Not yet'),el('button',{class:'btn primary',type:'button',id:'p-knew',onclick:()=>next(true)},'I knew it')):
-        el('button',{class:'btn primary',type:'button',id:'p-show',onclick:()=>{st.show=true;render();}},'Flip the card')));
+      st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'p-again',onclick:()=>next(false)},L('Not yet','Пока нет')),el('button',{class:'btn primary',type:'button',id:'p-knew',onclick:()=>next(true)},L('I knew it','Помню'))):
+        el('button',{class:'btn primary',type:'button',id:'p-show',onclick:()=>{st.show=true;render();}},L('Flip the card','Перевернуть'))));
 },
 /* in context */
 context(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
-  if(!w)return endCard('Finished!',['Your score: '+st.score+' of '+st.ids.length+'.'],restart(P,pool));
+  if(!w)return endCard(L('Finished!','Готово!'),[L('Your score: '+st.score+' of '+st.ids.length+'.','Результат: '+st.score+' из '+st.ids.length+'.')],restart(P,pool));
   const m=String(w.cloze).match(/\{\{(.+?)\}\}/);const alts=m?m[1].split('|'):[ansOf(w)];
   const parts=String(w.cloze).split(/\{\{.+?\}\}/);
-  const inp=el('input',{type:'text',class:'txt inline',id:'ctx-in',autocomplete:'off',autocapitalize:'off',spellcheck:'false','aria-label':'Missing word',disabled:!!st.res});inp.value=st.val;
+  const inp=el('input',{type:'text',class:'txt inline',id:'ctx-in',autocomplete:'off',autocapitalize:'off',spellcheck:'false','aria-label':L('Missing word','Пропущенное слово'),disabled:!!st.res});inp.value=st.val;
   inp.addEventListener('input',()=>{st.val=inp.value;});
   const check=()=>{if(st.res)return;const ok=alts.some(a=>norm(a)===norm(st.val));st.res=ok?'ok':'bad';if(ok)st.score++;record(w.id,ok);render();};
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();st.res?nextQ():check();}});
   const nextQ=()=>{st.i++;st.val='';st.res=null;st.hint=false;render();setTimeout(()=>{const x=document.getElementById('ctx-in');if(x)x.focus();},0);};
   const sent=el('p',{class:'ctx-sent'},parts[0],inp,parts.slice(1).join(''));
-  return el('div',{class:'card ctx'+(st.res?' '+st.res:'')},el('span',{class:'label'},'Sentence '+(st.i+1)+' of '+st.ids.length+' · score '+st.score),sent,
-    el('p',{class:'muted small'},(S.lang==='ru'?'Hint: ':'Meaning: ')+hintOf(w)),
-    st.hint&&!st.res?el('p',{class:'small'},'Starts with ',el('b',null,alts[0][0].toUpperCase()),', '+alts[0].length+' letters'):null,
-    st.res==='ok'?el('p',{class:'res ok'},'✓ Correct!'):st.res==='bad'?el('p',{class:'res bad'},'The answer: ',el('b',null,alts[0])):null,
+  return el('div',{class:'card ctx'+(st.res?' '+st.res:'')},el('span',{class:'label'},L('Sentence '+(st.i+1)+' of '+st.ids.length+' · score '+st.score,'Предложение '+(st.i+1)+' из '+st.ids.length+' · очки: '+st.score)),sent,
+    el('p',{class:'muted small'},(hintLang()==='ru'?L('Hint: ','Подсказка: '):L('Meaning: ','Значение: '))+hintOf(w)),
+    st.hint&&!st.res?el('p',{class:'small'},L('Starts with ','Начинается на '),el('b',null,alts[0][0].toUpperCase()),L(', '+alts[0].length+' letters',', букв: '+alts[0].length)):null,
+    st.res==='ok'?el('p',{class:'res ok'},L('✓ Correct!','✓ Верно!')):st.res==='bad'?el('p',{class:'res bad'},L('The answer: ','Правильно: '),el('b',null,alts[0])):null,
     el('div',{class:'row',style:'justify-content:center'},
-      st.res?el('button',{class:'btn primary',type:'button',id:'ctx-next',onclick:nextQ},'Next'):[el('button',{class:'btn',type:'button',id:'ctx-hint',onclick:()=>{st.hint=true;render();}},'Hint'),el('button',{class:'btn primary',type:'button',id:'ctx-check',onclick:check},'Check')]));
+      st.res?el('button',{class:'btn primary',type:'button',id:'ctx-next',onclick:nextQ},L('Next','Дальше')):[el('button',{class:'btn',type:'button',id:'ctx-hint',onclick:()=>{st.hint=true;render();}},L('Hint','Подсказка')),el('button',{class:'btn primary',type:'button',id:'ctx-check',onclick:check},L('Check','Проверить'))]));
 },
 /* speed */
 speed(P,pool){const st=P.st;
   const best=(progView().best||{}).speed||0;
   if(st.done){const nb=st.score>best;if(nb&&canSaveOwn()){S.prog.best=Object.assign({},S.prog.best,{speed:st.score});queueWrite('progress/'+S.uid,()=>S.prog,0);}
-    return endCard(nb?'New best score!':'Time’s up!',['Right answers: '+st.score+'. Mistakes: '+st.wrong+'.','Your best: '+Math.max(best,st.score)+'.'],restart(P,pool));}
-  if(!st.running)return el('div',{class:'card'},el('p',{class:'meaning'},'You have 60 seconds. Read the meaning and pick the word.'),el('p',{class:'muted small'},'Your best score: '+best),
-    el('button',{class:'btn primary',type:'button',id:'speed-go',onclick:()=>{st.running=true;st.q=speedQ(pool,null);P.timer=setInterval(()=>{st.left--;if(st.left<=0){st.left=0;st.done=true;stopTimers();}render();},1000);render();}},'Start'));
+    return endCard(nb?L('New best score!','Новый рекорд!'):L('Time’s up!','Время вышло!'),[L('Right answers: '+st.score+'. Mistakes: '+st.wrong+'.','Верно: '+st.score+'. Ошибок: '+st.wrong+'.'),L('Your best: ','Рекорд: ')+Math.max(best,st.score)+'.'],restart(P,pool));}
+  if(!st.running)return el('div',{class:'card'},el('p',{class:'meaning'},L('You have 60 seconds. Read the meaning and pick the word.','У вас 60 секунд. Читайте значение и выбирайте слово.')),el('p',{class:'muted small'},L('Your best score: ','Ваш рекорд: ')+best),
+    el('button',{class:'btn primary',type:'button',id:'speed-go',onclick:()=>{st.running=true;st.q=speedQ(pool,null);P.timer=setInterval(()=>{st.left--;if(st.left<=0){st.left=0;st.done=true;stopTimers();}render();},1000);render();}},L('Start','Старт')));
   const q=st.q;const w=S.words.find(x=>x.id===q.id);
   const pick=id=>{const ok=id===q.id;if(ok)st.score++;else st.wrong++;record(q.id,ok);st.last=ok?{ok:true}:{ok:false,word:w.word};st.q=speedQ(pool,q.id);render();};
   return el('div',{class:'card'},
-    el('div',{class:'speedbar'},el('span',{class:'timer'+(st.left<=10?' low':'')},st.left+'s'),el('span',{class:'label'},'Score '+st.score)),
+    el('div',{class:'speedbar'},el('span',{class:'timer'+(st.left<=10?' low':'')},st.left+L('s',' с')),el('span',{class:'label'},L('Score ','Очки: ')+st.score)),
     el('div',{class:'bar wide'},el('i',{style:'width:'+(st.left/60*100)+'%'})),
     el('p',{class:'meaning'},hintOf(w)),
     el('div',{class:'choices'},q.opts.map((id,i)=>el('button',{class:'btn choice',type:'button',id:'sp-'+i,onclick:()=>pick(id)},(S.words.find(x=>x.id===id)||{}).word))),
-    st.last?el('p',{class:'res '+(st.last.ok?'ok':'bad')},st.last.ok?'✓':'✗ It was: '+st.last.word):el('p',{class:'res'},' '));
+    st.last?el('p',{class:'res '+(st.last.ok?'ok':'bad')},st.last.ok?'✓':L('✗ It was: ','✗ Было: ')+st.last.word):el('p',{class:'res'},' '));
 },
 /* match pairs */
 match(P,pool){const st=P.st;const ids=st.chunks[st.round]||[];
-  if(st.round>=st.chunks.length){const sec=Math.round((Date.now()-st.start)/1000);return endCard('All pairs found!',['Time: '+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+'. Mistakes: '+st.mistakes+'.'],restart(P,pool));}
-  if(st.done.length===ids.length)return el('div',{class:'card'},el('h2',null,'Round '+(st.round+1)+' done!'),el('button',{class:'btn primary',type:'button',id:'match-next',onclick:()=>{st.round++;st.done=[];st.sel=null;if(st.chunks[st.round])st.right=shuffle(st.chunks[st.round]);render();}},st.round+1<st.chunks.length?'Next round':'See result'));
+  if(st.round>=st.chunks.length){const sec=Math.round((Date.now()-st.start)/1000);return endCard(L('All pairs found!','Все пары найдены!'),[L('Time: ','Время: ')+Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')+L('. Mistakes: ','. Ошибок: ')+st.mistakes+'.'],restart(P,pool));}
+  if(st.done.length===ids.length)return el('div',{class:'card'},el('h2',null,L('Round '+(st.round+1)+' done!','Раунд '+(st.round+1)+' пройден!')),el('button',{class:'btn primary',type:'button',id:'match-next',onclick:()=>{st.round++;st.done=[];st.sel=null;if(st.chunks[st.round])st.right=shuffle(st.chunks[st.round]);render();}},st.round+1<st.chunks.length?L('Next round','Следующий раунд'):L('See result','Результат')));
   const tap=(side,id)=>{if(st.done.includes(id)||st.bad)return;
     if(!st.sel||st.sel.side===side){st.sel={side,id};render();return;}
     const a=st.sel.id;if(a===id){st.done.push(id);record(id,true);st.sel=null;render();}
     else{st.mistakes++;const wid=side==='w'?id:a;record(wid,false);st.bad=[st.sel.side+':'+a,side+':'+id];st.sel=null;render();setTimeout(()=>{st.bad=null;render();},650);}};
   const btn=(side,id,label)=>{const k=side+':'+id;const cls=['pair'];if(st.done.includes(id))cls.push('gone');if(st.sel&&st.sel.side===side&&st.sel.id===id)cls.push('sel');if(st.bad&&st.bad.includes(k))cls.push('wrong');
     return el('button',{class:cls.join(' '),type:'button',id:'pr-'+side+'-'+id,disabled:st.done.includes(id),onclick:()=>tap(side,id)},label);};
-  return el('div',{class:'list'},el('p',{class:'small muted'},'Round '+(st.round+1)+' of '+st.chunks.length+' · mistakes: '+st.mistakes),
+  return el('div',{class:'list'},el('p',{class:'small muted'},L('Round '+(st.round+1)+' of '+st.chunks.length+' · mistakes: '+st.mistakes,'Раунд '+(st.round+1)+' из '+st.chunks.length+' · ошибок: '+st.mistakes)),
     el('div',{class:'pairs'},el('div',{class:'pcol'},ids.map(id=>btn('w',id,(S.words.find(x=>x.id===id)||{}).word))),el('div',{class:'pcol'},st.right.map(id=>btn('m',id,hintOf(S.words.find(x=>x.id===id)))))));
 },
 /* crossword */
 cross(P,pool){const st=P.st;const cw=st.cw;
-  if(!cw)return el('div',{class:'empty'},'Not enough one-word answers for a crossword here. Choose more lessons.');
+  if(!cw)return el('div',{class:'empty'},L('Not enough one-word answers for a crossword here. Choose more lessons.','Для кроссворда не хватает слов из одного слова. Возьмите слова с нескольких уроков.'));
   const cellsOf=wd=>Array.from({length:wd.ans.length},(_,i)=>[wd.r+(wd.dir==='d'?i:0),wd.c+(wd.dir==='a'?i:0)]);
   const solved=wd=>cellsOf(wd).every(([r,c])=>(st.vals[r+','+c]||'')===cw.cells[r+','+c]);
   const focusCell=(r,c)=>{const x=document.getElementById('cx-'+r+'-'+c);if(x){x.focus();x.select();}};
@@ -906,7 +921,7 @@ cross(P,pool){const st=P.st;const cw=st.cw;
   for(let r=0;r<cw.rows;r++)for(let c=0;c<cw.cols;c++){const k=r+','+c;
     if(!cw.cells[k]){grid.append(el('div',{class:'cx-b'}));continue;}
     const v=st.vals[k]||'';const cls=['cx-c'];if(st.checked&&v)cls.push(v===cw.cells[k]?'ok':'no');
-    const inp=el('input',{id:'cx-'+r+'-'+c,maxlength:'2',autocomplete:'off',autocapitalize:'characters',spellcheck:'false','aria-label':'Row '+(r+1)+' column '+(c+1)});inp.value=v;
+    const inp=el('input',{id:'cx-'+r+'-'+c,maxlength:'2',autocomplete:'off',autocapitalize:'characters',spellcheck:'false','aria-label':L('Row '+(r+1)+' column '+(c+1),'Строка '+(r+1)+', столбец '+(c+1))});inp.value=v;
     inp.addEventListener('focus',()=>{const a=cw.words.some(w=>w.dir==='a'&&cellsOf(w).some(([rr,cc])=>rr===r&&cc===c));const d=cw.words.some(w=>w.dir==='d'&&cellsOf(w).some(([rr,cc])=>rr===r&&cc===c));if(!(st.dir==='a'?a:d))st.dir=a?'a':'d';});
     inp.addEventListener('input',()=>{const ch=(inp.value.slice(-1)||'').toUpperCase().replace(/[^A-Z]/g,'');inp.value=ch;st.vals[k]=ch;if(st.checked){st.checked=false;inp.parentNode.classList.remove('ok','no');}if(ch)step(r,c,1);});
     inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value){e.preventDefault();step(r,c,-1);}
@@ -914,28 +929,28 @@ cross(P,pool){const st=P.st;const cw=st.cw;
       else if(e.key==='ArrowDown'){st.dir='d';step(r,c,1);}else if(e.key==='ArrowUp'){st.dir='d';step(r,c,-1);}});
     const n=cw.words.find(w=>w.r===r&&w.c===c);
     grid.append(el('div',{class:cls.join(' ')},n?el('span',{class:'cx-n'},String(n.num)):null,inp));}
-  const clueList=dir=>el('div',{class:'clues'},el('h3',null,dir==='a'?'Across →':'Down ↓'),el('ol',null,cw.words.filter(w=>w.dir===dir).sort((a,b)=>a.num-b.num).map(w=>
+  const clueList=dir=>el('div',{class:'clues'},el('h3',null,dir==='a'?L('Across →','По горизонтали →'):L('Down ↓','По вертикали ↓')),el('ol',null,cw.words.filter(w=>w.dir===dir).sort((a,b)=>a.num-b.num).map(w=>
     el('li',{class:st.checked?(solved(w)?'ok':''):''},el('button',{class:'clue',type:'button',onclick:()=>{st.dir=dir;focusCell(w.r,w.c);}},el('b',null,w.num+'. '),hintOf(S.words.find(x=>x.id===w.id))+' ('+w.ans.length+')')))));
   const all=cw.words.every(solved);
   return el('div',{class:'list'},
-    st.checked&&all?el('div',{class:'finish'},el('strong',null,'✓ Solved! Well done.')):null,
+    st.checked&&all?el('div',{class:'finish'},el('strong',null,L('✓ Solved! Well done.','✓ Решено! Отлично.'))):null,
     el('div',{class:'cxwrap'},grid),
-    el('div',{class:'row'},el('button',{class:'btn primary',type:'button',id:'cx-check',onclick:()=>{if(!st.checked){cw.words.forEach(w=>{const filled=cellsOf(w).every(([r,c])=>st.vals[r+','+c]);if(filled&&!st.rec?.[w.id]){record(w.id,solved(w));st.rec=Object.assign({},st.rec,{[w.id]:1});}});}st.checked=true;render();}},'Check'),
-      el('button',{class:'btn',type:'button',id:'cx-new',onclick:restart(P,pool)},'New crossword')),
+    el('div',{class:'row'},el('button',{class:'btn primary',type:'button',id:'cx-check',onclick:()=>{if(!st.checked){cw.words.forEach(w=>{const filled=cellsOf(w).every(([r,c])=>st.vals[r+','+c]);if(filled&&!st.rec?.[w.id]){record(w.id,solved(w));st.rec=Object.assign({},st.rec,{[w.id]:1});}});}st.checked=true;render();}},L('Check','Проверить')),
+      el('button',{class:'btn',type:'button',id:'cx-new',onclick:restart(P,pool)},L('New crossword','Новый кроссворд'))),
     el('div',{class:'cluegrid'},clueList('a'),clueList('d')));
 },
 /* spelling */
 spell(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
-  if(!w)return endCard('Finished!',['Your score: '+st.score+' of '+st.ids.length+'.'],restart(P,pool));
+  if(!w)return endCard(L('Finished!','Готово!'),[L('Your score: '+st.score+' of '+st.ids.length+'.','Результат: '+st.score+' из '+st.ids.length+'.')],restart(P,pool));
   const ans=ansOf(w).toLowerCase();const built=st.built.map(i=>st.tiles[i]).join('');
   const check=()=>{const ok=built===ans;st.res=ok?'ok':'bad';if(ok)st.score++;record(w.id,ok);render();};
   const next=()=>{st.i++;spellPrep(st);render();};
-  return el('div',{class:'card'},el('span',{class:'label'},'Word '+(st.i+1)+' of '+st.ids.length+' · score '+st.score),el('p',{class:'meaning'},hintOf(w)),
+  return el('div',{class:'card'},el('span',{class:'label'},L('Word '+(st.i+1)+' of '+st.ids.length+' · score '+st.score,'Слово '+(st.i+1)+' из '+st.ids.length+' · очки: '+st.score)),el('p',{class:'meaning'},hintOf(w)),
     el('div',{class:'slots'+(st.res?' '+st.res:'')},Array.from({length:ans.length},(_,i)=>el('span',{class:'slot'},built[i]||''))),
-    st.res==='bad'?el('p',{class:'res bad'},'The answer: ',el('b',null,ans)):st.res==='ok'?el('p',{class:'res ok'},'✓ Correct!'):null,
+    st.res==='bad'?el('p',{class:'res bad'},L('The answer: ','Правильно: '),el('b',null,ans)):st.res==='ok'?el('p',{class:'res ok'},L('✓ Correct!','✓ Верно!')):null,
     !st.res?el('div',{class:'tiles'},st.tiles.map((ch,i)=>el('button',{class:'tile',type:'button',id:'tile-'+i,disabled:st.built.includes(i),onclick:()=>{st.built.push(i);if(st.built.length===ans.length)check();else render();}},ch))):null,
-    el('div',{class:'row',style:'justify-content:center'},st.res?el('button',{class:'btn primary',type:'button',id:'sp-next',onclick:next},'Next'):
-      [el('button',{class:'btn',type:'button',id:'sp-undo',disabled:!st.built.length,onclick:()=>{st.built.pop();render();}},'Undo'),el('button',{class:'btn',type:'button',id:'sp-skip',onclick:()=>{st.res='bad';record(w.id,false);render();}},'Show answer')]));
+    el('div',{class:'row',style:'justify-content:center'},st.res?el('button',{class:'btn primary',type:'button',id:'sp-next',onclick:next},L('Next','Дальше')):
+      [el('button',{class:'btn',type:'button',id:'sp-undo',disabled:!st.built.length,onclick:()=>{st.built.pop();render();}},L('Undo','Отменить')),el('button',{class:'btn',type:'button',id:'sp-skip',onclick:()=>{st.res='bad';record(w.id,false);render();}},L('Show answer','Показать ответ'))]));
 }};
 function speedQ(pool,prev){let c=pool.filter(w=>w.id!==prev);if(!c.length)c=pool;const w=c[Math.floor(Math.random()*c.length)];
   const others=shuffle(pool.filter(x=>x.id!==w.id)).slice(0,3).map(x=>x.id);return{id:w.id,opts:shuffle([w.id,...others])};}
@@ -1081,11 +1096,11 @@ function renderLessons(){
   if(T)sec.append(el('div',{class:'addrow'},addLessonForm(),addPaymentForm()));
   const neg=B.balance<0;
   const bal=el('div',{class:'balance'+(neg?' neg':'')},el('span',{class:'label'},L('Lesson balance','Баланс занятий')),
-    el('span',{class:'big'+(neg?' neg':'')},signed(B.balance)+' '+(isTeacherView()?ruLessons(B.balance):(Math.abs(B.balance)===1?'lesson':'lessons'))),
+    el('span',{class:'big'+(neg?' neg':'')},signed(B.balance)+' '+(RU()?ruLessons(B.balance):(Math.abs(B.balance)===1?'lesson':'lessons'))),
     el('p',{class:'muted small'},neg?L('These lessons are not paid yet:','Эти уроки ещё не оплачены:'):B.balance===0?L('All lessons are paid. The next lesson needs a new payment.','Все уроки оплачены. Следующий урок уже в минус.'):L('Paid lessons you still have.','Оплаченные уроки, которые ещё остались.')),
     neg?el('div',{class:'chips unpaid'},B.unpaid.map(l=>el('span',null,fmtDate(l.date,true)))):null);
   sec.append(bal);
-  if(!S.ready){sec.append(el('div',{class:'empty'},'Loading…'));return sec;}
+  if(!S.ready){sec.append(el('div',{class:'empty'},L('Loading…','Загрузка…')));return sec;}
   // packages
   sec.append(el('h3',null,L('Payments','Оплаты')));
   if(!B.packages.length)sec.append(el('div',{class:'empty'},L('No payments yet.','Оплат пока нет.')));
