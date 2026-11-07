@@ -27,7 +27,7 @@ var TABS = {
   pending: 'Ожидают'
 };
 var COLS = {
-  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang'],
+  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang', 'skin'],
   homework: ['id', 'student', 'date', 'title', 'focus', 'url', 'checked', 'tasks'],
   words: ['id', 'student', 'word', 'meaning', 'ru', 'example', 'cloze', 'lesson'],
   lessons: ['id', 'student', 'date', 'kind', 'note'],
@@ -37,6 +37,7 @@ var COLS = {
   pending: ['id', 'tg_name', 'username', 'seen']
 };
 var CONTENT = ['homework', 'words', 'lessons', 'payments'];
+var SKINS = ['doodle', 'game', 'elegant'];
 var MAX_AGE_SEC = 7 * 24 * 3600;
 
 /* ---------------- HTTP ---------------- */
@@ -156,6 +157,13 @@ function teacherAction(a, req) {
       writeRow('students', s); return { students: listStudents() };
     });
   }
+  if (a === 'setSkin') {
+    return withLock(function () {
+      var s = mustStudent(req.student);
+      s.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'doodle';
+      writeRow('students', s); return { students: listStudents() };
+    });
+  }
   if (a === 'resetInvite') {
     return withLock(function () {
       var s = mustStudent(req.student); s.tg_id = ''; s.tg_name = ''; s.invite = newCode();
@@ -247,10 +255,11 @@ function loadFor(s) {
 
 function listStudents() {
   return readAll('students').map(function (s) {
-    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en' };
+    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s) };
   });
 }
-function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en' }; }
+function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s) }; }
+function skinOf(s) { return SKINS.indexOf(s.skin) >= 0 ? s.skin : 'doodle'; }
 function mustStudent(id) {
   var s = findBy('students', 'id', String(id || ''));
   if (!s) throw new Error('Ученик не найден');
