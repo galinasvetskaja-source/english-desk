@@ -57,21 +57,21 @@ html:root[data-skin="doodle"]{
   --r:20px;
   --bw:2.5px;
 }
-html[data-skin="doodle"] body{background-color:var(--bg);background-image:var(--d-tile);background-size:480px 480px;font-weight:500}
+html[data-skin="doodle"] body{background-color:var(--bg);background-image:none;font-weight:500}
 html[data-skin="doodle"] h1{font-size:clamp(2rem,8vw,2.6rem);line-height:1.05;font-weight:900;letter-spacing:-.01em}
 html[data-skin="doodle"] h2{font-size:1.4rem;line-height:1.15;font-weight:900;letter-spacing:-.005em}
 html[data-skin="doodle"] h3{font-size:1.15rem;line-height:1.2;font-weight:900;letter-spacing:0}
 html[data-skin="doodle"] .label{font-family:var(--f-body);font-weight:800;color:var(--teacher);letter-spacing:.06em}
 html[data-skin="doodle"] .muted{color:var(--muted)}
-html[data-skin="doodle"] .wrap>header{position:relative;min-height:88px}
-html[data-skin="doodle"] :is(#hello,#eyebrow){padding-right:120px}
-html[data-skin="doodle"] .wrap>header::after{content:"";position:absolute;top:-8px;right:-8px;width:128px;height:80px;background:var(--d-cluster) center/contain no-repeat;pointer-events:none}
+html[data-skin="doodle"] .wrap>header{display:grid;grid-template-columns:minmax(0,1fr) 112px;column-gap:8px;row-gap:6px;align-content:start;align-items:start}
+html[data-skin="doodle"] .wrap>header>*{grid-column:1}
+html[data-skin="doodle"] .wrap>header::after{content:"";grid-column:2;grid-row:1/4;width:112px;height:72px;background:var(--d-cluster) center/contain no-repeat;pointer-events:none}
 html[data-skin="doodle"] #hello::after{content:"";display:block;width:116px;height:12px;margin-top:8px;background:var(--d-wave) left center/contain no-repeat}
 html[data-skin="doodle"] .skinbar .sw{border:var(--bw) solid var(--ink)}
 html[data-skin="doodle"] .skinbar .sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5.5px var(--ink)}
 
 /* every card: white sticker with a thick black outline */
-html[data-skin="doodle"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.finish,.scorebox,.sbar,.tbar,.notice){border:var(--bw) solid var(--ink);border-radius:20px}
+html[data-skin="doodle"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.finish,.scorebox,.sbar,.tbar,.notice,.setbox){border:var(--bw) solid var(--ink);border-radius:20px}
 html[data-skin="doodle"] .item{border:2px solid var(--ink);border-radius:14px}
 html[data-skin="doodle"] :is(.passage,.rule,.quote){border-radius:14px}
 html[data-skin="doodle"] :is(.w,th,td){border-top-color:var(--soft-line)}
@@ -108,21 +108,20 @@ html[data-skin="doodle"] .mode-t{font-size:1.15rem;font-weight:900}
 html[data-skin="doodle"] .mode-n{color:var(--ink)}
 
 /* a little smiling object in the corner of every task */
-html[data-skin="doodle"] .task{position:relative}
-html[data-skin="doodle"] .task>h3{padding-right:56px}
-html[data-skin="doodle"] .task::after{content:"";position:absolute;top:8px;right:10px;width:48px;height:48px;background:var(--d-cherries) center/contain no-repeat;pointer-events:none}
-html[data-skin="doodle"] .task:nth-of-type(7n+1)::after{background-image:var(--d-cherries)}
-html[data-skin="doodle"] .task:nth-of-type(7n+2)::after{background-image:var(--d-cup)}
-html[data-skin="doodle"] .task:nth-of-type(7n+3)::after{background-image:var(--d-tulip)}
-html[data-skin="doodle"] .task:nth-of-type(7n+4)::after{background-image:var(--d-apple)}
-html[data-skin="doodle"] .task:nth-of-type(7n+5)::after{background-image:var(--d-lock)}
-html[data-skin="doodle"] .task:nth-of-type(7n+6)::after{background-image:var(--d-egg)}
-html[data-skin="doodle"] .task:nth-of-type(7n+7)::after{background-image:var(--d-pea)}
+html[data-skin="doodle"] .task>h3{display:flex;align-items:center;justify-content:space-between;gap:12px}
+html[data-skin="doodle"] .task>h3::after{content:"";flex:none;width:48px;height:48px;background:var(--d-cherries) center/contain no-repeat}
+html[data-skin="doodle"] .task:nth-of-type(7n+1)>h3::after{background-image:var(--d-cherries)}
+html[data-skin="doodle"] .task:nth-of-type(7n+2)>h3::after{background-image:var(--d-cup)}
+html[data-skin="doodle"] .task:nth-of-type(7n+3)>h3::after{background-image:var(--d-tulip)}
+html[data-skin="doodle"] .task:nth-of-type(7n+4)>h3::after{background-image:var(--d-apple)}
+html[data-skin="doodle"] .task:nth-of-type(7n+5)>h3::after{background-image:var(--d-lock)}
+html[data-skin="doodle"] .task:nth-of-type(7n+6)>h3::after{background-image:var(--d-egg)}
+html[data-skin="doodle"] .task:nth-of-type(7n+7)>h3::after{background-image:var(--d-pea)}
 html[data-skin="doodle"] .finish{background:var(--s-green);color:var(--ok)}
-html[data-skin="doodle"] .finish::after{content:"";width:40px;height:40px;background:var(--d-heart) center/contain no-repeat;align-self:flex-end;margin-top:-36px}
+html[data-skin="doodle"] .finish::after{content:"";width:40px;height:40px;background:var(--d-heart) center/contain no-repeat;align-self:flex-end;flex:none}
 html[data-skin="doodle"] .card{position:relative}
-html[data-skin="doodle"] .card::before{content:"";position:absolute;top:-14px;left:-10px;width:30px;height:30px;background:var(--d-star-yellow) center/contain no-repeat;transform:rotate(-12deg);pointer-events:none}
-html[data-skin="doodle"] .balance{position:relative}
+html[data-skin="doodle"] .card::before{content:"";position:absolute;top:-8px;left:-8px;width:26px;height:26px;background:var(--d-star-yellow) center/contain no-repeat;transform:rotate(-12deg);pointer-events:none}
+html[data-skin="doodle"] .balance{position:relative;padding-right:72px}
 html[data-skin="doodle"] .balance::after{content:"";position:absolute;top:10px;right:12px;width:44px;height:44px;background:var(--d-lock) center/contain no-repeat;pointer-events:none}
 
 /* tabs, buttons, chips */
@@ -216,8 +215,8 @@ html[data-skin="game"] .wrap>header{position:relative;padding-top:26px}
 html[data-skin="game"] .wrap>header::before{content:"";position:absolute;top:0;right:0;width:136px;height:18px;background:var(--d-hud) right center/contain no-repeat;image-rendering:pixelated}
 html[data-skin="game"] .skinbar .nm{font-family:var(--f-display);font-size:.55rem}
 
-html[data-skin="game"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.item,.finish,.scorebox,.passage,.rule,.quote,.tbar,.sbar,.notice,details.add){border-radius:3px}
-html[data-skin="game"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode){border-width:2px;box-shadow:0 4px 0 rgba(0,0,0,.5)}
+html[data-skin="game"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.item,.finish,.scorebox,.passage,.rule,.quote,.tbar,.sbar,.notice,.setbox,.setrow,details.add){border-radius:3px}
+html[data-skin="game"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.setbox){border-width:2px;box-shadow:0 4px 0 rgba(0,0,0,.5)}
 html[data-skin="game"] .item{border-width:2px}
 html[data-skin="game"] .stat:nth-child(1){border-color:var(--c1)}
 html[data-skin="game"] .stat:nth-child(2){border-color:var(--c2)}
@@ -317,7 +316,7 @@ html[data-skin="elegant"] .skinbar{justify-content:center}
 html[data-skin="elegant"] .skinbar .sw{width:34px;height:34px}
 html[data-skin="elegant"] #sub{max-width:44ch;text-wrap:balance}
 
-html[data-skin="elegant"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode){border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 30px -22px rgba(110,90,30,.45)}
+html[data-skin="elegant"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.setbox){border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 30px -22px rgba(110,90,30,.45)}
 html[data-skin="elegant"] .item{border-radius:12px}
 html[data-skin="elegant"] .stat{align-items:center;text-align:center;padding:14px 10px}
 html[data-skin="elegant"] .stat b,html[data-skin="elegant"] .balance .big,html[data-skin="elegant"] .review-main .big{font-weight:600;font-size:2rem;font-variant-numeric:lining-nums}
@@ -356,3 +355,9 @@ html[data-skin="elegant"] .card .answer{background:var(--marker);font-weight:600
 html[data-skin="elegant"] .mode-t{font-size:1.35rem;font-weight:600}
 html[data-skin="elegant"] .group-h{background:var(--sunk)}
 html[data-skin="elegant"] .toast{background:#38362F;color:#FFFDF6}
+
+/* spelling result: right = green, wrong = red */
+html[data-skin="doodle"] .slots.ok .slot{border-color:var(--ok);color:var(--ok);background:var(--s-green)}
+html[data-skin="doodle"] .slots.bad .slot{border-color:var(--bad);color:var(--bad);background:var(--s-red)}
+
+@media (max-width:520px){html[data-skin="doodle"] nav.tabs{gap:4px}}

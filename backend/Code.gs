@@ -27,7 +27,7 @@ var TABS = {
   pending: 'Ожидают'
 };
 var COLS = {
-  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang', 'skin'],
+  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang', 'skin', 'modes_off'],
   homework: ['id', 'student', 'date', 'title', 'focus', 'url', 'checked', 'tasks'],
   words: ['id', 'student', 'word', 'meaning', 'ru', 'example', 'cloze', 'lesson'],
   lessons: ['id', 'student', 'date', 'kind', 'note'],
@@ -38,6 +38,8 @@ var COLS = {
 };
 var CONTENT = ['homework', 'words', 'lessons', 'payments'];
 var SKINS = ['doodle', 'game', 'elegant'];
+// Режимы повторения слов: интервальное повторение и шесть игр.
+var MODES = ['review', 'cards', 'context', 'speed', 'match', 'cross', 'spell'];
 var MAX_AGE_SEC = 7 * 24 * 3600;
 
 /* ---------------- HTTP ---------------- */
@@ -164,6 +166,13 @@ function teacherAction(a, req) {
       writeRow('students', s); return { students: listStudents() };
     });
   }
+  if (a === 'setModes') {
+    return withLock(function () {
+      var s = mustStudent(req.student);
+      s.modes_off = encodeModesOff(req.off);
+      writeRow('students', s); return { students: listStudents() };
+    });
+  }
   if (a === 'resetInvite') {
     return withLock(function () {
       var s = mustStudent(req.student); s.tg_id = ''; s.tg_name = ''; s.invite = newCode();
@@ -222,6 +231,25 @@ function teacherAction(a, req) {
 function studentAction(a, req, me) {
   if (a === 'me') return { role: 'student', student: publicStudent(me) };
   if (a === 'load') return loadFor(me);
+  // Настройки кабинета: ученик меняет их сам (те же поля, что и учитель).
+  if (a === 'setLang') {
+    return withLock(function () {
+      me.lang = req.lang === 'ru' ? 'ru' : 'en';
+      writeRow('students', me); return { student: publicStudent(me) };
+    });
+  }
+  if (a === 'setSkin') {
+    return withLock(function () {
+      me.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'doodle';
+      writeRow('students', me); return { student: publicStudent(me) };
+    });
+  }
+  if (a === 'setModes') {
+    return withLock(function () {
+      me.modes_off = encodeModesOff(req.off);
+      writeRow('students', me); return { student: publicStudent(me) };
+    });
+  }
   if (a === 'saveProgress') {
     return withLock(function () {
       writeRow('progress', { id: me.id, student: me.id, data: req.data || {}, updated: new Date().toISOString() });
@@ -255,10 +283,19 @@ function loadFor(s) {
 
 function listStudents() {
   return readAll('students').map(function (s) {
-    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s) };
+    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) };
   });
 }
-function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s) }; }
+function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) }; }
+// Режимы повторения, которые выключены (в таблице — через запятую). Пусто = включено всё.
+function modesOff(s) {
+  return String(s.modes_off || '').split(',').filter(function (m) { return MODES.indexOf(m) >= 0; });
+}
+function encodeModesOff(list) {
+  var off = (Array.isArray(list) ? list : []).filter(function (m, i, a) { return MODES.indexOf(m) >= 0 && a.indexOf(m) === i; });
+  if (off.length >= MODES.length) off = []; // нельзя выключить всё
+  return off.join(',');
+}
 function skinOf(s) { return SKINS.indexOf(s.skin) >= 0 ? s.skin : 'doodle'; }
 function mustStudent(id) {
   var s = findBy('students', 'id', String(id || ''));

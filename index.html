@@ -7,7 +7,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<script>try{document.documentElement.dataset.skin=localStorage.getItem('kd-skin')||localStorage.getItem('kd-skin-seen')||'doodle';}catch(e){document.documentElement.dataset.skin='doodle';}</script>
+<script>try{document.documentElement.dataset.skin=localStorage.getItem('kd-skin-seen')||localStorage.getItem('kd-skin')||'doodle';}catch(e){document.documentElement.dataset.skin='doodle';}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800;900&family=Press+Start+2P&family=Exo+2:wght@400;500;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -178,6 +178,13 @@ thead th{border-top:0;font-size:.75rem;text-transform:uppercase;letter-spacing:.
 .review-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .review-main .big{font-family:var(--f-display);font-weight:700;font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums}
 .review-actions{display:flex;flex-wrap:wrap;gap:8px}
+.setbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.setgroup{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.setrows{display:flex;flex-direction:column;gap:8px;align-self:stretch}
+.setrow{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer}
+.setrow input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.setrow>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+nav.tabs button.tab-gear{padding:8px 14px;font-size:1.05rem;line-height:1.5}
 .seg{display:inline-flex;background:var(--sunk);padding:3px;border-radius:999px;gap:2px}
 .seg button{border:0;background:transparent;padding:6px 12px;border-radius:999px;font-weight:700;font-size:.85rem;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -254,10 +261,13 @@ details.add textarea.big{min-height:140px;font-family:ui-monospace,Menlo,monospa
   .w{grid-template-columns:1fr}
   .w .side{grid-row:auto;grid-column:auto;flex-direction:row;align-items:center;justify-content:space-between}
   .task{padding:14px}
+  nav.tabs{gap:2px}
+  nav.tabs button{padding:8px 9px}
+  nav.tabs button.tab-gear{padding:8px 11px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-<link rel="stylesheet" href="skins.css?v=2">
+<link rel="stylesheet" href="skins.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -265,7 +275,6 @@ details.add textarea.big{min-height:140px;font-family:ui-monospace,Menlo,monospa
     <span class="label" id="eyebrow">Your English desk</span>
     <h1 id="hello">Hi!</h1>
     <p class="muted" id="sub">Your homework, words from our lessons and your lesson balance, all in one place.</p>
-    <div class="skinbar" id="skinbar"></div>
   </header>
   <div id="tbar"></div>
   <div id="notice"></div>
@@ -274,6 +283,7 @@ details.add textarea.big{min-height:140px;font-family:ui-monospace,Menlo,monospa
     <button role="tab" id="tab-homework" data-tab="homework">Homework</button>
     <button role="tab" id="tab-words" data-tab="words">Words</button>
     <button role="tab" id="tab-lessons" data-tab="lessons">Lessons</button>
+    <button role="tab" id="tab-settings" data-tab="settings" class="tab-gear" aria-label="Settings" title="Settings">⚙</button>
   </nav>
   <main id="main"></main>
 </div>
@@ -436,10 +446,12 @@ function render(){
   if(gate){renderTop();$('#main').replaceChildren(gate);return;}
   renderTop();renderSummary();
   document.querySelectorAll('#tabs button').forEach(b=>{b.setAttribute('aria-selected',b.dataset.tab===S.tab?'true':'false');
+    if(b.dataset.tab==='settings'){const t=L('Settings','Настройки');b.textContent='⚙';b.title=t;b.setAttribute('aria-label',t);return;}
     b.textContent={homework:L('Homework','Домашка'),words:L('Words','Слова'),lessons:L('Lessons','Занятия')}[b.dataset.tab];});
   const m=$('#main');m.replaceChildren();
   if(S.tab==='homework')m.append(S.openHw?renderHwOpen():renderHomework());
   else if(S.tab==='words')m.append(renderWords());
+  else if(S.tab==='settings')m.append(renderSettings());
   else m.append(renderLessons());
 }
 function renderTop(){
@@ -459,31 +471,89 @@ function renderTop(){
     $('#sub').textContent=subText();
   }
   document.documentElement.lang=uiLang();
-  applySkin();renderSkinbar();
+  applySkin();
   renderNotice();
 }
 /* ---------- skins: doodle · game · elegant ---------- */
 const SKINS=[['doodle','Doodles','Рисунки'],['game','Game','Игра'],['elegant','Elegant','Элегантный']];
 const SKIN_IDS=SKINS.map(s=>s[0]);
+// Учитель выбирает свой вид на этом устройстве; у ученика стиль хранится на сервере (так его видят и ученик, и учитель).
 function ownSkin(){try{const v=localStorage.getItem('kd-skin');return SKIN_IDS.includes(v)?v:null;}catch(e){return null;}}
 function skinOf(){
-  const def=((curStudent()||{}).skin);const d=SKIN_IDS.includes(def)?def:'doodle';
-  if(S.role==='teacher')return S.preview?d:(ownSkin()||'doodle');
-  return ownSkin()||d;}
+  if(S.role==='teacher'&&!S.preview)return ownSkin()||'doodle';
+  const st=curStudent();
+  if(st)return SKIN_IDS.includes(st.skin)?st.skin:'doodle';
+  try{const v=localStorage.getItem('kd-skin-seen');if(SKIN_IDS.includes(v))return v;}catch(e){}
+  return 'doodle';}
 function applySkin(){
   const s=skinOf();const root=document.documentElement;
   if(root.dataset.skin!==s){root.dataset.skin=s;syncHeader();}
   try{localStorage.setItem('kd-skin-seen',s);}catch(e){}}
-function setSkin(v){try{localStorage.setItem('kd-skin',v);}catch(e){}applySkin();render();}
-function renderSkinbar(){
-  const bar=$('#skinbar');if(!bar)return;bar.replaceChildren();
-  if(S.role==='loading'||S.role==='outside'||S.role==='error')return;
-  if(S.role==='teacher'&&S.preview){return;} // preview shows the student's own default
-  const cur=skinOf();
-  bar.append(el('span',{class:'label'},L('Style','Стиль')));
-  SKINS.forEach(([id,en,ru])=>{const name=L(en,ru);
-    bar.append(el('button',{type:'button',class:'sw sw-'+id,id:'skin-'+id,title:name,'aria-label':name,'aria-pressed':cur===id?'true':'false',onclick:()=>setSkin(id)}));});
-  const nm=SKINS.find(s=>s[0]===cur);bar.append(el('span',{class:'nm'},nm?L(nm[1],nm[2]):''));
+function setOwnSkin(v){try{localStorage.setItem('kd-skin',v);}catch(e){}applySkin();render();}
+
+/* ---------- settings: style, cabinet language, practice modes ---------- */
+// Выключенные режимы хранятся у ученика (modes_off); пусто = включено всё. Менять могут и ученик, и учитель.
+const modeOff=()=>new Set((curStudent()||{}).modes_off||[]);
+const modeOn=id=>!modeOff().has(id);
+const gamesOn=()=>MODES.some(m=>modeOn(m.id));
+function allModes(){return[['review','Spaced review','Интервальное повторение','Words come back after 1, 3, 7, 14 and 30 days.','Слова возвращаются через 1, 3, 7, 14 и 30 дней.']]
+  .concat(MODES.map(m=>[m.id,m.t,m.tr,m.d,m.dr]));}
+// Сохраняет настройку у текущего ученика: сначала меняет экран, потом отправляет на сервер (при ошибке возвращает как было).
+function setPref(action,patch,payload){
+  const cur=curStudent();if(!cur)return;
+  const prev={};for(const k in patch)prev[k]=cur[k];
+  Object.assign(cur,patch);applySkin();render();
+  api(action,Object.assign({student:cur.id},payload)).catch(e=>{
+    Object.assign(cur,prev);applySkin();render();
+    toast(L('Could not save: ','Не сохранилось: ')+(e.code==='offline'?L('no internet','нет интернета'):e.message));});}
+function toggleMode(id,on){
+  const off=modeOff();
+  if(on)off.delete(id);else{
+    if(allModes().every(m=>m[0]===id||off.has(m[0]))){toast(L('At least one mode must stay on','Хотя бы один режим должен остаться включённым'));render();return;}
+    off.add(id);}
+  const list=[...off];
+  S.practice=null;
+  setPref('setModes',{modes_off:list},{off:list});}
+const asTeacher=()=>S.role==='teacher';
+function swatches(cur,onPick,idp){
+  const box=el('div',{class:'skinbar'});
+  SKINS.forEach(([id,en,ru])=>{const name=RU()||asTeacher()?ru:en;
+    box.append(el('button',{type:'button',class:'sw sw-'+id,id:idp+id,title:name,'aria-label':name,'aria-pressed':cur===id?'true':'false',onclick:()=>onPick(id)}));});
+  const nm=SKINS.find(s=>s[0]===cur);
+  box.append(el('span',{class:'nm'},nm?(asTeacher()?nm[2]:L(nm[1],nm[2])):''));
+  return box;}
+function langSeg(cur,onPick,idp){
+  return el('div',{class:'seg',role:'group','aria-label':asTeacher()?'Язык кабинета':L('Cabinet language','Язык кабинета')},
+    el('button',{type:'button',id:idp+'en','aria-pressed':cur!=='ru'?'true':'false',onclick:()=>onPick('en')},'English'),
+    el('button',{type:'button',id:idp+'ru','aria-pressed':cur==='ru'?'true':'false',onclick:()=>onPick('ru')},'Русский'));}
+function modeList(){
+  const T=asTeacher();const box=el('div',{class:'setrows'});
+  for(const [id,en,ru,de,dr] of allModes()){
+    const cb=el('input',{type:'checkbox',id:'mode-on-'+id,checked:modeOn(id)});
+    cb.addEventListener('change',()=>toggleMode(id,cb.checked));
+    box.append(el('label',{class:'setrow',for:'mode-on-'+id},cb,el('span',null,el('b',null,T?ru:L(en,ru)),el('span',{class:'small muted'},T?dr:L(de,dr)))));}
+  return box;}
+function renderSettings(){
+  const sec=el('section',{'aria-labelledby':'tab-settings'});const T=asTeacher();const cur=curStudent();
+  if(T){
+    sec.append(el('div',{class:'setbox'},el('h3',null,'Мой стиль'),
+      el('p',{class:'small muted'},'Так выглядит кабинет у вас на этом устройстве. Ученик выбирает свой стиль сам.'),
+      swatches(skinOf(),setOwnSkin,'skin-')));
+    if(cur){
+      sec.append(el('div',{class:'setbox'},el('h3',null,'Кабинет ученика: '+cur.name),
+        el('p',{class:'small muted'},'Эти настройки ученик тоже может менять у себя. Они общие: что поменяете вы, увидит ученик, и наоборот.'),
+        el('div',{class:'setgroup'},el('span',{class:'label'},'Язык кабинета'),langSeg(cur.lang,v=>setPref('setLang',{lang:v},{lang:v}),'st-lang-')),
+        el('div',{class:'setgroup'},el('span',{class:'label'},'Стиль'),swatches(SKIN_IDS.includes(cur.skin)?cur.skin:'doodle',v=>setPref('setSkin',{skin:v},{skin:v}),'st-skin-')),
+        el('div',{class:'setgroup'},el('span',{class:'label'},'Режимы повторения слов'),modeList())));
+    }
+    return sec;
+  }
+  sec.append(
+    el('div',{class:'setbox'},el('h3',null,L('Style','Стиль')),swatches(skinOf(),v=>setPref('setSkin',{skin:v},{skin:v}),'skin-')),
+    el('div',{class:'setbox'},el('h3',null,L('Cabinet language','Язык кабинета')),langSeg(cur&&cur.lang,v=>setPref('setLang',{lang:v},{lang:v}),'lang-')),
+    el('div',{class:'setbox'},el('h3',null,L('Word practice modes','Режимы повторения слов')),
+      el('p',{class:'small muted'},L('Choose what you want to see in the Words tab.','Выберите, что показывать на вкладке «Слова».')),modeList()));
+  return sec;
 }
 function subText(){return L('Your homework, words from our lessons and your lesson balance, all in one place.','Домашка, слова с наших уроков и баланс занятий — всё в одном месте.');}
 function renderNotice(){
@@ -516,13 +586,6 @@ function studentBar(){
   if(S.students.length)top.append(el('button',{class:'btn t',type:'button',id:'st-add',onclick:()=>{S.open.st=!S.open.st;render();if(S.open.st)setTimeout(()=>{const i=$('#st-name');if(i)i.focus();},0);}},S.open.st?'Отмена':'+ Новый ученик'));
   box.append(top,addF);
   if(cur){
-    const lsel=el('select',{id:'st-lang','aria-label':'Язык кабинета ученика'},
-      el('option',{value:'en',selected:cur.lang!=='ru'},'английский'),el('option',{value:'ru',selected:cur.lang==='ru'},'русский'));
-    lsel.addEventListener('change',()=>tCall('setLang',{student:cur.id,lang:lsel.value},lsel.value==='ru'?'Кабинет '+cur.name+' теперь на русском':'Кабинет '+cur.name+' теперь на английском'));
-    const ssel=el('select',{id:'st-skin','aria-label':'Стиль кабинета ученика'},
-      SKINS.map(([id,en,ru])=>el('option',{value:id,selected:(SKIN_IDS.includes(cur.skin)?cur.skin:'doodle')===id},ru)));
-    ssel.addEventListener('change',()=>tCall('setSkin',{student:cur.id,skin:ssel.value},'Стиль для '+cur.name+' обновлён (ученик может выбрать свой)'));
-    box.append(el('div',{class:'row'},el('span',null,'Язык кабинета:'),lsel,el('span',null,'Стиль:'),ssel));
     if(cur.linked){
       box.append(el('div',{class:'row'},el('span',null,'✓ Подключён в Telegram'+(cur.tg_name?': '+cur.tg_name:'')),el('span',{class:'sp'}),
         confirmBtn('Отвязать и сделать новую ссылку','Точно? Ученик потеряет доступ, пока не откроет новую ссылку',()=>tCall('resetInvite',{student:cur.id},'Готово, новая ссылка ниже'),'st-reset')));
@@ -777,14 +840,15 @@ function renderWords(){
   if(T)sec.append(el('div',{class:'addrow'},addWordForm(),importWordsForm()));
   if(!S.words.length){sec.append(el('div',{class:'empty'},S.ready?(T?'Слов пока нет.':L('No words yet. Words from our lessons will appear here.','Слов пока нет. Здесь появятся слова с наших уроков.')):L('Loading words…','Загружаю слова…')));return sec;}
   const D=dueList();const lastW=lastLessonWords();
-  sec.append(el('div',{class:'review'},
-    el('div',{class:'review-main'},el('span',{class:'label'},L('Today’s review','Повторение на сегодня')),
+  const revOn=modeOn('review'),gOn=gamesOn();
+  const acts=[];
+  if(revOn)acts.push(el('button',{class:'btn primary',type:'button',id:'start-review',disabled:!D.today.length,onclick:startReview},L('Start review','Начать повторение')));
+  if(gOn)acts.push(el('button',{class:revOn?'btn':'btn primary',type:'button',id:'all-games',onclick:()=>startGames(S.words.map(w=>w.id))},L('Games','Игры')));
+  const main=revOn?el('div',{class:'review-main'},el('span',{class:'label'},L('Today’s review','Повторение на сегодня')),
       el('span',{class:'big'},String(D.today.length)),
-      el('span',{class:'small muted'},D.today.length?L(D.old.length+' to repeat · '+Math.min(D.fresh.length,NEW_PER_SESSION)+' new','повторить '+D.old.length+' · новых '+Math.min(D.fresh.length,NEW_PER_SESSION)):L('All done for today. Come back tomorrow!',T?'На сегодня всё повторено.':'На сегодня всё повторено. Возвращайтесь завтра!'))),
-    el('div',{class:'review-actions'},
-      el('button',{class:'btn primary',type:'button',id:'start-review',disabled:!D.today.length,onclick:startReview},L('Start review','Начать повторение')),
-      el('button',{class:'btn',type:'button',id:'last-lesson',disabled:!lastW.length,onclick:()=>startGames(lastW.map(w=>w.id))},L('Last lesson words ('+lastW.length+')','Слова с последнего урока ('+lastW.length+')')),
-      el('button',{class:'btn',type:'button',id:'all-games',onclick:()=>startGames(S.words.map(w=>w.id))},L('Games with all words','Игры со всеми словами')))));
+      el('span',{class:'small muted'},D.today.length?L(D.old.length+' to repeat · '+Math.min(D.fresh.length,NEW_PER_SESSION)+' new','повторить '+D.old.length+' · новых '+Math.min(D.fresh.length,NEW_PER_SESSION)):L('All done for today. Come back tomorrow!',T?'На сегодня всё повторено.':'На сегодня всё повторено. Возвращайтесь завтра!')))
+    :el('div',{class:'review-main'},el('span',{class:'label'},L('Practice','Тренировка')),el('span',{class:'small muted'},L('Play with your words.','Играйте со своими словами.')));
+  sec.append(el('div',{class:'review'},main,el('div',{class:'review-actions'},acts)));
   const search=el('input',{type:'search',id:'w-search',placeholder:L('Find a word','Найти слово'),value:S.q,'aria-label':L('Find a word','Найти слово')});
   search.addEventListener('input',()=>{S.q=search.value;const pos=search.selectionStart;render();const s=$('#w-search');if(s){s.focus();try{s.setSelectionRange(pos,pos);}catch(e){}}});
   const opts=[['all',L('All words','Все слова')],['last',L('Last lesson','Последний урок')],['due',L('To review today','На сегодня')],['hard',L('Tricky words','Трудные слова')],['new',L('Not learned yet','Ещё не выучены')],['learned',L('Learned','Выучены')]];
@@ -860,7 +924,7 @@ function chooser(P,pool){
   const cb=el('input',{type:'checkbox',id:'only-new',checked:!!P.onlyNew});cb.addEventListener('change',()=>{P.onlyNew=cb.checked;render();});
   return el('div',{class:'list'},
     el('div',{class:'row'},el('p',null,el('strong',null,nWords(pool.length)),L(' in this practice',' в тренировке')),el('label',{class:'chk',for:'only-new'},cb,L('Only words not learned yet','Только невыученные'))),
-    el('div',{class:'modes'},MODES.map(m=>{const n=pool.filter(m.ok).length;const dis=n<m.min;
+    el('div',{class:'modes'},MODES.filter(m=>modeOn(m.id)).map(m=>{const n=pool.filter(m.ok).length;const dis=n<m.min;
       return el('button',{class:'mode',type:'button',id:'mode-'+m.id,disabled:dis,onclick:()=>{P.mode=m.id;P.st=INITS[m.id](pool.filter(m.ok));render();window.scrollTo(0,0);}},
         el('span',{class:'mode-t'},L(m.t,m.tr)),el('span',{class:'mode-d'},L(m.d,m.dr)),el('span',{class:'mode-n'},dis?L('Needs '+m.min+'+ words','Нужно от '+m.min+' слов'):nWords(n)));})));
 }
@@ -973,7 +1037,7 @@ cross(P,pool){const st=P.st;const cw=st.cw;
 spell(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
   if(!w)return endCard(L('Finished!','Готово!'),[L('Your score: '+st.score+' of '+st.ids.length+'.','Результат: '+st.score+' из '+st.ids.length+'.')],restart(P,pool));
   const ans=ansOf(w).toLowerCase();const built=st.built.map(i=>st.tiles[i]).join('');
-  const check=()=>{const ok=built===ans;st.res=ok?'ok':'bad';if(ok)st.score++;record(w.id,ok);render();};
+  const check=()=>{const now=st.built.map(i=>st.tiles[i]).join('');const ok=now===ans;st.res=ok?'ok':'bad';if(ok)st.score++;record(w.id,ok);render();};
   const next=()=>{st.i++;spellPrep(st);render();};
   return el('div',{class:'card'},el('span',{class:'label'},L('Word '+(st.i+1)+' of '+st.ids.length+' · score '+st.score,'Слово '+(st.i+1)+' из '+st.ids.length+' · очки: '+st.score)),el('p',{class:'meaning'},hintOf(w)),
     el('div',{class:'slots'+(st.res?' '+st.res:'')},Array.from({length:ans.length},(_,i)=>el('span',{class:'slot'},built[i]||''))),
@@ -1185,7 +1249,7 @@ function addPaymentForm(){
 
 /* ---------- tabs & boot ---------- */
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{stopTimers();S.tab=b.dataset.tab;S.practice=null;S.openHw=null;render();}));
-const h0=(location.hash||'').slice(1);if(['homework','words','lessons'].includes(h0))S.tab=h0;
+const h0=(location.hash||'').slice(1);if(['homework','words','lessons','settings'].includes(h0))S.tab=h0;
 
 /* ---------- Telegram ---------- */
 function syncHeader(){if(!TG)return;
