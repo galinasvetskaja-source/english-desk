@@ -142,6 +142,11 @@ textarea.txt{min-height:64px;resize:vertical}
 .w .term{font-weight:700;font-size:1.05rem}
 .w .term mark{background:var(--marker);color:inherit;padding:0 3px;border-radius:3px}
 .w .ex{font-style:italic;color:var(--muted);font-size:.92rem}
+.say{border:0;background:none;color:inherit;font:inherit;font-size:1rem;line-height:1;padding:4px 6px;margin-left:2px;border-radius:999px;cursor:pointer;vertical-align:middle;opacity:.65;font-style:normal}
+.say:hover,.say:focus-visible{opacity:1;background:var(--marker)}
+.say.on{opacity:1;animation:sayp .8s ease-in-out infinite}
+@keyframes sayp{50%{transform:scale(1.18)}}
+@media (prefers-reduced-motion:reduce){.say.on{animation:none}}
 .w .side{grid-row:1/span 3;grid-column:2;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer;white-space:nowrap}
 .chk input{width:18px;height:18px;accent-color:var(--ok)}
@@ -985,6 +990,32 @@ function getLang(){try{return localStorage.getItem('kd-lang')||null;}catch(e){re
 S.lang=getLang();
 const hintLang=()=>S.lang||(RU()?'ru':'en');
 function setLang(v){S.lang=v;try{localStorage.setItem('kd-lang',v);}catch(e){}render();}
+/* ---------- озвучка: голос устройства (Web Speech API) ---------- */
+// Кнопка 🔊 появляется, только если браузер умеет говорить. Голос — английский, какой есть на устройстве.
+const TTS=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window)?window.speechSynthesis:null;
+function ttsVoice(){if(!TTS)return null;const vs=TTS.getVoices().filter(v=>/^en[-_]/i.test(v.lang)||v.lang==='en');
+  const pref=['en-GB','en-US','en-AU','en-CA','en-IE'];
+  for(const l of pref){const v=vs.filter(x=>x.lang.replace('_','-')===l);const g=v.find(x=>/google|natural|premium|enhanced|samantha|daniel|serena/i.test(x.name));if(g||v[0])return g||v[0];}
+  return vs[0]||null;}
+if(TTS){try{TTS.getVoices();TTS.addEventListener&&TTS.addEventListener('voiceschanged',()=>TTS.getVoices());}catch(e){}}
+function speakText(w){return String(w||'').split(' / ')[0].replace(/\(.*?\)/g,' ').replace(/\bsth\b/gi,'something').replace(/\bsb\b/gi,'somebody').replace(/\s+/g,' ').trim();}
+function say(text,btn){if(!TTS||!text)return;
+  try{TTS.cancel();}catch(e){}
+  document.querySelectorAll('.say.on').forEach(b=>b.classList.remove('on'));
+  const u=new SpeechSynthesisUtterance(text);const v=ttsVoice();if(v)u.voice=v;u.lang=v?v.lang:'en-US';u.rate=.9;
+  let started=false;
+  u.onstart=()=>{started=true;btn&&btn.classList.add('on');};
+  u.onend=()=>btn&&btn.classList.remove('on');
+  u.onerror=e=>{btn&&btn.classList.remove('on');if(e&&(e.error==='canceled'||e.error==='interrupted'))return;
+    toast(L('Sound is not available on this device','Озвучка недоступна на этом устройстве'));};
+  TTS.speak(u);
+  setTimeout(()=>{if(!started&&!TTS.speaking){btn&&btn.classList.remove('on');toast(L('Sound is not available on this device','Озвучка недоступна на этом устройстве'));}},2500);}
+// Кнопка «послушать». text — что произнести; label — подпись для экранного диктора.
+function sayBtn(text,id,label){const t=speakText(text);if(!TTS||!t)return null;
+  const b=el('button',{class:'say',type:'button',id:id||null,title:label||L('Listen','Послушать'),'aria-label':(label||L('Listen','Послушать'))+': '+t},'🔊');
+  b.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();say(t,b);});return b;}
+function stopSay(){if(TTS)try{TTS.cancel();}catch(e){}}
+
 function hintOf(w){if(!w)return'';return hintLang()==='ru'&&w.ru?w.ru:(w.meaning||'');}
 const SRS_DAYS=[0,1,3,7,14,30];const NEW_PER_SESSION=8;
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -1042,7 +1073,7 @@ function renderWords(){
     if(T){const ws2=wst[w.id];if(ws2)side.append(el('span',{class:'small muted',title:'верно / ошибок в играх'},'✓'+ws2[0]+' ✗'+ws2[1]));
       side.append(confirmBtn('Удалить','Точно?',()=>tWrite(()=>S.db.doc('words/'+w.id).delete(),'Слово удалено'),'wdel-'+w.id));}
     const main=T?[el('div',null,w.meaning),w.ru?el('div',{class:'small muted'},w.ru):null]:[el('div',null,hintOf(w))];
-    box.append(el('div',{class:'w'},el('div',{class:'term'},el('mark',null,w.word)),side,...main,exampleText(w)?el('div',{class:'ex'},exampleText(w)):null));
+    box.append(el('div',{class:'w'},el('div',{class:'term'},el('mark',null,w.word),sayBtn(w.word,'say-'+w.id,L('Listen to the word','Послушать слово'))),side,...main,exampleText(w)?el('div',{class:'ex'},exampleText(w),sayBtn(exampleText(w),'sayx-'+w.id,L('Listen to the example','Послушать пример'))):null));
   }
   sec.append(box);
   return sec;
@@ -1059,8 +1090,8 @@ function renderSrs(P){
     el('div',{class:'bar wide'},el('i',{style:'width:'+Math.round(done/st.total*100)+'%'})),
     el('div',{class:'card'},el('span',{class:'label'},done+L(' of ',' из ')+st.total+(srsOf(id)?'':L(' · new word',' · новое слово'))),
       el('p',{class:'meaning'},hintOf(w)),
-      st.show?el('span',{class:'answer'},w.word):el('p',{class:'muted small'},L('Remember the word and say it out loud.','Вспомните слово и скажите его вслух.')),
-      st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w)):null,
+      st.show?el('div',null,el('span',{class:'answer'},w.word),sayBtn(w.word,'rv-say')):el('p',{class:'muted small'},L('Remember the word and say it out loud.','Вспомните слово и скажите его вслух.')),
+      st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w),sayBtn(exampleText(w),'rv-sayx',L('Listen to the example','Послушать пример'))):null,
       st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'rv-again',onclick:()=>answer(false)},L('I didn’t know','Не помню')),el('button',{class:'btn primary',type:'button',id:'rv-knew',onclick:()=>answer(true)},L('I knew it','Помню'))):
         el('button',{class:'btn primary',type:'button',id:'rv-show',onclick:()=>{st.show=true;render();}},L('Show the word','Показать слово'))));
 }
@@ -1117,14 +1148,15 @@ const VIEWS={
 /* flashcards */
 cards(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
   if(!w)return endCard(L('Finished!','Готово!'),[L('You went through '+st.ids.length+' cards.','Пройдено карточек: '+st.ids.length+'.'),L('You knew '+st.knew+'.','Вспомнили: '+st.knew+'.')],restart(P,pool));
-  const front=st.dir==='mw'?el('p',{class:'meaning'},hintOf(w)):el('span',{class:'answer'},w.word);
-  const backSide=st.dir==='mw'?el('span',{class:'answer'},w.word):el('p',{class:'meaning'},hintOf(w));
+  const wordEl=id=>el('div',null,el('span',{class:'answer'},w.word),sayBtn(w.word,id));
+  const front=st.dir==='mw'?el('p',{class:'meaning'},hintOf(w)):wordEl('p-say');
+  const backSide=st.dir==='mw'?wordEl('p-say'):el('p',{class:'meaning'},hintOf(w));
   const next=k=>{record(w.id,k);if(k)st.knew++;st.i++;st.show=false;render();};
   return el('div',{class:'list'},
     el('div',{class:'row'},el('button',{class:'btn',type:'button',id:'flip-dir',onclick:()=>{st.dir=st.dir==='mw'?'wm':'mw';st.show=false;render();}},st.dir==='mw'?L('Show the word first','Сначала слово'):L('Show the meaning first','Сначала значение'))),
     el('div',{class:'card'},el('span',{class:'label'},L('Card '+(st.i+1)+' of '+st.ids.length,'Карточка '+(st.i+1)+' из '+st.ids.length)),front,
       st.show?backSide:el('p',{class:'muted small'},st.dir==='mw'?L('Say the word out loud, then flip.','Скажите слово вслух и переверните.'):L('Explain the word, then flip.','Объясните слово и переверните.')),
-      st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w)):null,
+      st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w),sayBtn(exampleText(w),'p-sayx',L('Listen to the example','Послушать пример'))):null,
       st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'p-again',onclick:()=>next(false)},L('Not yet','Пока нет')),el('button',{class:'btn primary',type:'button',id:'p-knew',onclick:()=>next(true)},L('I knew it','Помню'))):
         el('button',{class:'btn primary',type:'button',id:'p-show',onclick:()=>{st.show=true;render();}},L('Flip the card','Перевернуть'))));
 },
@@ -1212,7 +1244,7 @@ spell(P,pool){const st=P.st;const w=S.words.find(x=>x.id===st.ids[st.i]);
   const next=()=>{st.i++;spellPrep(st);render();};
   return el('div',{class:'card'},el('span',{class:'label'},L('Word '+(st.i+1)+' of '+st.ids.length+' · score '+st.score,'Слово '+(st.i+1)+' из '+st.ids.length+' · очки: '+st.score)),el('p',{class:'meaning'},hintOf(w)),
     el('div',{class:'slots'+(st.res?' '+st.res:'')},Array.from({length:ans.length},(_,i)=>el('span',{class:'slot'},built[i]||''))),
-    st.res==='bad'?el('p',{class:'res bad'},L('The answer: ','Правильно: '),el('b',null,ans)):st.res==='ok'?el('p',{class:'res ok'},L('✓ Correct!','✓ Верно!')):null,
+    st.res==='bad'?el('p',{class:'res bad'},L('The answer: ','Правильно: '),el('b',null,ans),sayBtn(w.word,'sp-say')):st.res==='ok'?el('p',{class:'res ok'},L('✓ Correct!','✓ Верно!'),sayBtn(w.word,'sp-say')):null,
     !st.res?el('div',{class:'tiles'},st.tiles.map((ch,i)=>el('button',{class:'tile',type:'button',id:'tile-'+i,disabled:st.built.includes(i),onclick:()=>{st.built.push(i);if(st.built.length===ans.length)check();else render();}},ch))):null,
     el('div',{class:'row',style:'justify-content:center'},st.res?el('button',{class:'btn primary',type:'button',id:'sp-next',onclick:next},L('Next','Дальше')):
       [el('button',{class:'btn',type:'button',id:'sp-undo',disabled:!st.built.length,onclick:()=>{st.built.pop();render();}},L('Undo','Отменить')),el('button',{class:'btn',type:'button',id:'sp-skip',onclick:()=>{st.res='bad';record(w.id,false);render();}},L('Show answer','Показать ответ'))]));
