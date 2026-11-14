@@ -1,4 +1,4 @@
-/* English Desk — skins. Three looks, switched with <html data-skin="doodle|game|elegant">.
+/* English Desk — skins. Four looks, switched with <html data-skin="doodle|game|elegant|sticker">.
    Every skin re-defines the same colour/font variables that index.html uses, then adds its own decoration.
    Generated from skins.tpl.css by gen.py (the drawings below are inline SVG). */
 
@@ -38,6 +38,7 @@
 .skinbar .sw-doodle{background:radial-gradient(circle at 50% 50%,#DCCFF7 0 34%,transparent 35%),conic-gradient(#E8382F 0 20%,#F7C744 0 40%,#3DAA4A 0 60%,#3B7BEA 0 80%,#EE6FD6 0)}
 .skinbar .sw-game{background:linear-gradient(135deg,#0E1024 0 50%,#3DF2E0 50% 75%,#FF3EA5 75%)}
 .skinbar .sw-elegant{background:linear-gradient(135deg,#FFF1B8 0 50%,#A9C7E6 50%)}
+.skinbar .sw-sticker{background:radial-gradient(circle at 70% 30%,#FF8FB5 0 16%,transparent 17%),linear-gradient(135deg,#101585 0 52%,#DDFD52 52%)}
 .skinbar .nm{font-size:.85rem;color:var(--muted)}
 
 /* =====================================================================
@@ -419,3 +420,216 @@ html[data-skin="elegant"] .sgroup{border:1px solid var(--line);background:var(--
 html[data-skin="elegant"] .sgroup.target{border:1px dashed var(--accent);background:var(--accent-soft)}
 html[data-skin="elegant"] .sgh{font-size:1.2rem;font-weight:600}
 html[data-skin="elegant"] .dd{border:1px solid var(--accent);background:var(--marker)}
+
+/* =====================================================================
+   4. STICKER — «стикербук» from Galya's visual style: navy ink, sun-glare lime,
+      paper + periwinkle, 2.5px navy outlines, hard offset shadows (no blur),
+      slightly tilted stickers with tape, Rubik / Onest / Caveat
+   ===================================================================== */
+html:root[data-skin="sticker"]{
+  color-scheme:light;
+  --bg:#F7F8FF; --surface:#FFFFFF; --sunk:#E9ECFF; --ink:#101585; --muted:#3A3F9C; --line:#101585; --soft-line:#CED4FF;
+  --accent:#101585; --accent-soft:#CED4FF; --marker:#DDFD52;
+  --ok:#0B6B3E; --ok-soft:#E4FBB8; --warn:#6E5300; --warn-soft:#F4FFC9; --info:#101585; --info-soft:#E9ECFF; --bad:#B0124F; --bad-soft:#FFE1EC;
+  --teacher:#101585; --teacher-soft:#CED4FF;
+  --navy:#101585; --navy-deep:#0A0E5C; --lime:#DDFD52; --lime-soft:#F2FFC4; --peri:#CED4FF; --pink:#FF8FB5; --pink-soft:#FFE1EC; --on-navy:#C9CEFF;
+  --f-display:"Rubik","Segoe UI",system-ui,sans-serif;
+  --f-body:"Onest","Segoe UI",system-ui,sans-serif;
+  --f-hand:"Caveat","Comic Sans MS",cursive;
+  --r:22px; --bw:2.5px; --sh:4px 4px 0 var(--navy);
+  --k-spark:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Cpath d=%27M20 2C21.5 13 27 18.5 38 20C27 21.5 21.5 27 20 38C18.5 27 13 21.5 2 20C13 18.5 18.5 13 20 2Z%27 fill=%27%23DDFD52%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  --k-spark-w:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Cpath d=%27M20 2C21.5 13 27 18.5 38 20C27 21.5 21.5 27 20 38C18.5 27 13 21.5 2 20C13 18.5 18.5 13 20 2Z%27 fill=%27%23FFFFFF%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  --k-spark-n:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Cpath d=%27M20 2C21.5 13 27 18.5 38 20C27 21.5 21.5 27 20 38C18.5 27 13 21.5 2 20C13 18.5 18.5 13 20 2Z%27 fill=%27%23101585%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  --k-heart:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 36%27%3E%3Cpath d=%27M20 33C8 25 2 18 2 11A8.5 8.5 0 0 1 20 7A8.5 8.5 0 0 1 38 11C38 18 32 25 20 33Z%27 fill=%27%23FF8FB5%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E");
+  --k-smile:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 44 44%27%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%2719%27 fill=%27%23DDFD52%27 stroke=%27%23101585%27 stroke-width=%272.5%27/%3E%3Ccircle cx=%2715.5%27 cy=%2718%27 r=%272.3%27 fill=%27%23101585%27/%3E%3Ccircle cx=%2728.5%27 cy=%2718%27 r=%272.3%27 fill=%27%23101585%27/%3E%3Cpath d=%27M13.5 26Q22 34 30.5 26%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
+  --k-pencil:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 48 48%27%3E%3Cg transform=%27rotate(-40 24 24)%27%3E%3Crect x=%276%27 y=%2717%27 width=%2730%27 height=%2714%27 rx=%272%27 fill=%27%23DDFD52%27 stroke=%27%23101585%27 stroke-width=%272.5%27/%3E%3Crect x=%272%27 y=%2717%27 width=%277%27 height=%2714%27 rx=%272%27 fill=%27%23FF8FB5%27 stroke=%27%23101585%27 stroke-width=%272.5%27/%3E%3Cpath d=%27M36 17L46 24L36 31Z%27 fill=%27%23FFFFFF%27 stroke=%27%23101585%27 stroke-width=%272.5%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M42.5 21.5L46 24L42.5 26.5Z%27 fill=%27%23101585%27/%3E%3Cpath d=%27M9 24H36%27 stroke=%27%23101585%27 stroke-width=%271.6%27/%3E%3C/g%3E%3C/svg%3E");
+  --k-arrow:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 60 40%27%3E%3Cpath d=%27M4 30C14 6 30 4 34 16C37 25 26 28 25 20C24 12 38 8 52 14%27 stroke=%27%23101585%27 stroke-width=%272.6%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3Cpath d=%27M45 8L53 14L45 19%27 stroke=%27%23101585%27 stroke-width=%272.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
+  --k-wave:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 14%27%3E%3Cpath d=%27M3 8Q13 1 23 8T43 8T63 8T83 8T103 8T117 6%27 stroke=%27%23DDFD52%27 stroke-width=%273.5%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
+  --k-wave-n:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 14%27%3E%3Cpath d=%27M3 8Q13 1 23 8T43 8T63 8T83 8T103 8T117 6%27 stroke=%27%23101585%27 stroke-width=%273%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
+  --k-dots:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 22 22%27%3E%3Ccircle cx=%2711%27 cy=%2711%27 r=%271.6%27 fill=%27%23DDFD52%27 fill-opacity=%27.55%27/%3E%3C/svg%3E");
+  --k-check:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%2710%27 fill=%27%23DDFD52%27 stroke=%27%23101585%27 stroke-width=%272%27/%3E%3Cpath d=%27M7.5 12.3L10.6 15.3L16.5 9%27 stroke=%27%23101585%27 stroke-width=%272.3%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
+}
+html[data-skin="sticker"] body{background-color:var(--bg);background-image:none;font-size:16.5px;line-height:1.6}
+html[data-skin="sticker"] :focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+html[data-skin="sticker"] h1{font-size:clamp(2rem,8vw,2.7rem);line-height:1.06;font-weight:800;letter-spacing:-.015em}
+html[data-skin="sticker"] h2{font-size:1.5rem;line-height:1.1;font-weight:800;letter-spacing:-.01em}
+html[data-skin="sticker"] h3{font-size:1.15rem;line-height:1.15;font-weight:700;letter-spacing:0}
+html[data-skin="sticker"] .label{font-family:var(--f-display);font-weight:700;color:var(--muted);letter-spacing:.07em}
+html[data-skin="sticker"] .wrap{gap:22px}
+html[data-skin="sticker"] :is(#tbar,#notice):empty{display:none}
+
+/* first screen: navy sticker with lime dots, handwritten lime label, sparkles */
+html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy) var(--k-dots) 0 0/22px 22px;color:#fff;border:var(--bw) solid var(--navy);border-radius:26px;
+  padding:22px 20px 22px;margin:4px 6px 4px 0;gap:8px;box-shadow:6px 6px 0 var(--lime),6px 6px 0 var(--bw) var(--navy)}
+html[data-skin="sticker"] .wrap>header::before{content:"";position:absolute;top:-14px;right:22px;width:40px;height:40px;background:var(--k-spark) center/contain no-repeat;transform:rotate(12deg);pointer-events:none}
+html[data-skin="sticker"] .wrap>header::after{content:"";position:absolute;top:22px;right:-10px;width:30px;height:27px;background:var(--k-heart) center/contain no-repeat;transform:rotate(14deg);pointer-events:none}
+html[data-skin="sticker"] #eyebrow{align-self:flex-start;font-family:var(--f-hand);font-size:1.35rem;font-weight:700;line-height:1.1;text-transform:none;letter-spacing:0;color:var(--navy);
+  background:var(--lime);padding:2px 12px 3px;border-radius:6px;transform:rotate(-2.5deg);box-shadow:3px 3px 0 var(--navy-deep)}
+html[data-skin="sticker"] #hello{color:#fff;padding-right:34px}
+html[data-skin="sticker"] #hello::after{content:"";display:block;width:120px;height:14px;margin-top:8px;background:var(--k-wave) left center/contain no-repeat}
+html[data-skin="sticker"] #sub{color:var(--on-navy);max-width:46ch}
+html[data-skin="sticker"] .skinbar .sw{border:var(--bw) solid var(--navy)}
+html[data-skin="sticker"] .skinbar .sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5.5px var(--navy)}
+
+/* every card: white sticker, navy outline, hard shadow */
+html[data-skin="sticker"] :is(.stat,.hw,.task,.card,.balance,.linkcard,.pk,.words,.tablebox,.review,.mode,.finish,.scorebox,.setbox){border:var(--bw) solid var(--navy);border-radius:var(--r);box-shadow:var(--sh)}
+html[data-skin="sticker"] :is(.sbar,.tbar,.notice){border:var(--bw) solid var(--navy);border-radius:18px}
+html[data-skin="sticker"] .item{border:2px solid var(--navy);border-radius:14px}
+html[data-skin="sticker"] :is(.passage,.quote){border-radius:14px}
+html[data-skin="sticker"] :is(.w,th,td){border-top-color:var(--soft-line)}
+html[data-skin="sticker"] .group-h{background:var(--peri);border-bottom:2px solid var(--navy)}
+html[data-skin="sticker"] .w:first-child,html[data-skin="sticker"] .group-h+.w{border-top:0}
+
+/* stat strip: three tilted stickers — white, lime, periwinkle */
+html[data-skin="sticker"] .summary{gap:12px;padding:0 4px 4px 0}
+html[data-skin="sticker"] .stat{padding:12px 14px}
+html[data-skin="sticker"] .stat:nth-child(1){transform:rotate(-1.2deg)}
+html[data-skin="sticker"] .stat:nth-child(2){background:var(--lime);transform:rotate(.9deg)}
+html[data-skin="sticker"] .stat:nth-child(3){background:var(--peri);transform:rotate(-.5deg)}
+html[data-skin="sticker"] .stat b,html[data-skin="sticker"] .balance .big,html[data-skin="sticker"] .review-main .big{font-weight:800;font-size:1.9rem;line-height:1.05}
+html[data-skin="sticker"] .stat .label{color:var(--navy)}
+html[data-skin="sticker"] .bar{height:12px;border-radius:99px;border:2px solid var(--navy);background:var(--surface)}
+html[data-skin="sticker"] .bar i{border-radius:0;background:var(--lime)}
+html[data-skin="sticker"] .stat:nth-child(2) .bar i{background:var(--navy)}
+html[data-skin="sticker"] .stat b.neg,html[data-skin="sticker"] .balance .big.neg{color:var(--bad)}
+
+/* homework cards: taped on, a little crooked */
+html[data-skin="sticker"] .list{gap:20px}
+html[data-skin="sticker"] .list>.hw{position:relative;padding-top:20px}
+html[data-skin="sticker"] .list>.hw::before{content:"";position:absolute;top:-11px;left:50%;width:78px;height:20px;margin-left:-39px;background:rgba(206,212,255,.72);border:1.5px solid var(--navy);border-radius:3px;transform:rotate(-3deg);pointer-events:none}
+html[data-skin="sticker"] .list>.hw:nth-child(odd){transform:rotate(-.5deg)}
+html[data-skin="sticker"] .list>.hw:nth-child(even){transform:rotate(.45deg)}
+html[data-skin="sticker"] .list>.hw:nth-child(even)::before{transform:rotate(2.5deg);left:30%}
+html[data-skin="sticker"] .list>.hw:nth-child(3n)::before{background:rgba(221,253,82,.75)}
+
+/* tasks: a hand-drawn sticker next to every title */
+html[data-skin="sticker"] .task>h3{display:flex;align-items:center;justify-content:space-between;gap:12px}
+html[data-skin="sticker"] .task>h3::after{content:"";flex:none;width:34px;height:34px;background:var(--k-spark) center/contain no-repeat;transform:rotate(-8deg)}
+html[data-skin="sticker"] .task:nth-of-type(5n+2)>h3::after{background-image:var(--k-heart);transform:rotate(9deg)}
+html[data-skin="sticker"] .task:nth-of-type(5n+3)>h3::after{background-image:var(--k-smile);transform:rotate(-6deg)}
+html[data-skin="sticker"] .task:nth-of-type(5n+4)>h3::after{background-image:var(--k-pencil);width:40px;height:40px;transform:none}
+html[data-skin="sticker"] .task:nth-of-type(5n+5)>h3::after{background-image:var(--k-spark-n);transform:rotate(10deg)}
+html[data-skin="sticker"] .task .instr{color:var(--muted)}
+html[data-skin="sticker"] .finish{background:var(--lime);color:var(--navy)}
+html[data-skin="sticker"] .finish::after{content:"";width:40px;height:36px;background:var(--k-heart) center/contain no-repeat;align-self:flex-end;flex:none;transform:rotate(10deg)}
+html[data-skin="sticker"] .card{position:relative}
+html[data-skin="sticker"] .card::before{content:"";position:absolute;top:-14px;left:-10px;width:32px;height:32px;background:var(--k-spark) center/contain no-repeat;transform:rotate(-12deg);pointer-events:none}
+html[data-skin="sticker"] .balance{position:relative;padding-right:72px}
+html[data-skin="sticker"] .balance::after{content:"";position:absolute;top:12px;right:14px;width:42px;height:42px;background:var(--k-smile) center/contain no-repeat;transform:rotate(8deg);pointer-events:none}
+
+/* practice modes: alternating stickers */
+html[data-skin="sticker"] .mode:nth-child(3n+1){background:var(--surface)}
+html[data-skin="sticker"] .mode:nth-child(3n+2){background:var(--lime)}
+html[data-skin="sticker"] .mode:nth-child(3n+3){background:var(--peri)}
+html[data-skin="sticker"] .mode:nth-child(odd){transform:rotate(-.6deg)}
+html[data-skin="sticker"] .mode:nth-child(even){transform:rotate(.6deg)}
+html[data-skin="sticker"] .mode:hover:not([disabled]){border-color:var(--navy);transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--navy)}
+html[data-skin="sticker"] .mode-t{font-size:1.15rem;font-weight:800}
+html[data-skin="sticker"] .mode-d{color:var(--muted)}
+html[data-skin="sticker"] .mode-n{color:var(--navy);font-family:var(--f-hand);font-size:1.15rem;font-weight:700}
+
+/* tabs, buttons — lime pills that lift on hover and press in */
+html[data-skin="sticker"] nav.tabs{background:transparent;padding:0 4px 4px 0;gap:8px;overflow:visible;flex-wrap:wrap}
+html[data-skin="sticker"] nav.tabs button{border:var(--bw) solid var(--navy);background:var(--surface);color:var(--navy);font-family:var(--f-display);font-weight:700;box-shadow:3px 3px 0 var(--navy)}
+html[data-skin="sticker"] nav.tabs button[aria-selected="true"]{background:var(--lime);box-shadow:3px 3px 0 var(--navy)}
+html[data-skin="sticker"] .btn{border:var(--bw) solid var(--navy);background:var(--surface);color:var(--navy);font-family:var(--f-display);font-weight:700;box-shadow:3px 3px 0 var(--navy);transition:transform .08s,box-shadow .08s}
+html[data-skin="sticker"] .btn:hover:not([disabled]){border-color:var(--navy);transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--navy)}
+html[data-skin="sticker"] .btn:active:not([disabled]){transform:translate(3px,3px);box-shadow:0 0 0 var(--navy)}
+html[data-skin="sticker"] .btn.primary{background:var(--lime);border-color:var(--navy);color:var(--navy)}
+html[data-skin="sticker"] .btn.on{background:var(--ok-soft);border-color:var(--navy);color:var(--ok)}
+html[data-skin="sticker"] .btn.t{border-color:var(--navy);color:var(--navy);background:var(--peri)}
+html[data-skin="sticker"] .btn.danger{border-color:transparent;background:transparent;color:var(--bad);box-shadow:none}
+html[data-skin="sticker"] .btn.danger:hover:not([disabled]){border-color:transparent;transform:none;box-shadow:none}
+html[data-skin="sticker"] .btn.danger.arm{border-color:var(--bad);background:var(--bad-soft)}
+html[data-skin="sticker"] .btn[disabled]{opacity:.45;box-shadow:none}
+html[data-skin="sticker"] .seg{background:var(--surface);border:2px solid var(--navy)}
+html[data-skin="sticker"] .seg button{color:var(--navy);font-weight:700}
+html[data-skin="sticker"] .seg button[aria-pressed="true"]{background:var(--lime);color:var(--navy);box-shadow:none}
+html[data-skin="sticker"] .pill{font-family:var(--f-display);font-weight:700;border:2px solid var(--navy)}
+html[data-skin="sticker"] .p-new{background:var(--surface);color:var(--navy)}
+html[data-skin="sticker"] .p-doing{background:var(--peri);color:var(--navy)}
+html[data-skin="sticker"] .p-done{background:var(--lime);color:var(--navy)}
+html[data-skin="sticker"] .p-checked{background:var(--navy);color:#fff}
+html[data-skin="sticker"] .p-checked::before{background:var(--lime)}
+html[data-skin="sticker"] .p-bad{background:var(--pink);color:var(--navy)}
+
+/* answering */
+html[data-skin="sticker"] .opt{border:2px solid var(--navy);background:var(--surface);border-radius:14px}
+html[data-skin="sticker"] .opt:has(input:checked){background:var(--lime);border-color:var(--navy)}
+html[data-skin="sticker"] .gapline input,html[data-skin="sticker"] .txt.inline{border:0;border-bottom:2.5px solid var(--navy);border-radius:6px 6px 0 0;background:var(--lime-soft);padding:2px 8px}
+html[data-skin="sticker"] :is(.txt,.match select,.note textarea,.tools input[type=search],.tools select,.sbar select,.sbar input,details.add input,details.add textarea,details.add select){border:2px solid var(--navy);background:var(--surface);border-radius:14px}
+html[data-skin="sticker"] :is(.txt,.match select,.note textarea,.tools input[type=search]):focus{border-color:var(--navy);box-shadow:3px 3px 0 var(--lime)}
+html[data-skin="sticker"] .bank{border:2px dashed var(--navy);border-radius:14px;background:var(--surface)}
+html[data-skin="sticker"] .bank span{border:2px solid var(--navy);border-radius:99px;color:var(--navy);font-weight:600}
+html[data-skin="sticker"] .bank span:nth-child(3n+1){background:var(--lime)}
+html[data-skin="sticker"] .bank span:nth-child(3n+2){background:var(--peri)}
+html[data-skin="sticker"] .bank span:nth-child(3n+3){background:var(--surface)}
+/* grammar note = lime sticky note with tape */
+html[data-skin="sticker"] .rule{position:relative;border:2px solid var(--navy);border-radius:6px;background:var(--lime);color:var(--navy);transform:rotate(-.6deg);box-shadow:3px 3px 0 var(--navy);margin-top:8px}
+html[data-skin="sticker"] .rule::before{content:"";position:absolute;top:-10px;left:22px;width:64px;height:18px;background:rgba(255,255,255,.7);border:1.5px solid var(--navy);border-radius:2px;transform:rotate(-4deg);pointer-events:none}
+html[data-skin="sticker"] .passage{background:var(--sunk);border:2px solid var(--navy);line-height:1.65}
+html[data-skin="sticker"] .quote{border-left:0;border:2px solid var(--navy);background:var(--lime-soft);color:var(--navy)}
+html[data-skin="sticker"] .item.good{background:var(--ok-soft);border-color:var(--navy)}
+html[data-skin="sticker"] .item.bad{background:var(--bad-soft);border-color:var(--navy)}
+
+/* words & games */
+html[data-skin="sticker"] .w .term mark{background:var(--lime)}
+html[data-skin="sticker"] .dots i{border:1.5px solid var(--navy);background:var(--surface)}
+html[data-skin="sticker"] .dots i.on{background:var(--lime);border-color:var(--navy)}
+html[data-skin="sticker"] .meter i{background:var(--navy);border:1.5px solid var(--navy)}
+html[data-skin="sticker"] .meter i.free{background:var(--lime);border:1.5px solid var(--navy)}
+html[data-skin="sticker"] .chips span{border:2px solid var(--navy);background:var(--surface)}
+html[data-skin="sticker"] .chips.unpaid span{background:var(--pink-soft);color:var(--bad)}
+html[data-skin="sticker"] .tile{border:var(--bw) solid var(--navy);color:var(--navy);font-weight:800;font-size:1.25rem;box-shadow:3px 3px 0 var(--navy)}
+html[data-skin="sticker"] .tile:nth-child(3n+1){background:var(--lime)}
+html[data-skin="sticker"] .tile:nth-child(3n+2){background:var(--surface)}
+html[data-skin="sticker"] .tile:nth-child(3n+3){background:var(--peri)}
+html[data-skin="sticker"] .tile:active:not([disabled]){transform:translate(3px,3px);box-shadow:none}
+html[data-skin="sticker"] .slot{border-bottom:3px solid var(--navy);font-family:var(--f-display);font-weight:800}
+html[data-skin="sticker"] .slots.ok .slot{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+html[data-skin="sticker"] .slots.bad .slot{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+html[data-skin="sticker"] .pair{border:2px solid var(--navy);border-radius:14px;background:var(--surface)}
+html[data-skin="sticker"] .pair.sel{background:var(--lime);border-color:var(--navy)}
+html[data-skin="sticker"] .pair.wrong{background:var(--pink-soft)}
+html[data-skin="sticker"] .pair.gone{background:var(--ok-soft);color:var(--ok)}
+html[data-skin="sticker"] .cx-c{border:2px solid var(--navy)}
+html[data-skin="sticker"] .card .answer{background:var(--lime);border:2px solid var(--navy);border-radius:8px;font-weight:800;transform:rotate(-1.5deg);box-shadow:3px 3px 0 var(--navy)}
+html[data-skin="sticker"] .scorebox b,html[data-skin="sticker"] .timer{font-weight:800}
+html[data-skin="sticker"] .pk .plus{font-weight:800}
+
+/* teacher bits, notices, toast */
+html[data-skin="sticker"] .tbar,html[data-skin="sticker"] .sbar{background:var(--peri);color:var(--navy)}
+html[data-skin="sticker"] .notice{background:var(--lime-soft);color:var(--navy)}
+html[data-skin="sticker"] details.add{border:2px dashed var(--navy);background:rgba(255,255,255,.75)}
+html[data-skin="sticker"] .toast{border-radius:999px;background:var(--navy);color:var(--lime);font-weight:600;box-shadow:4px 4px 0 var(--lime)}
+
+/* tap tasks */
+html[data-skin="sticker"] :is(.chip,.slotbtn,.sgroup){border:2px solid var(--navy)}
+html[data-skin="sticker"] .chip{font-weight:600;border-radius:14px;background:var(--surface);box-shadow:2px 2px 0 var(--navy)}
+html[data-skin="sticker"] .chip:active{transform:translate(2px,2px);box-shadow:none}
+html[data-skin="sticker"] .chips>.chip:nth-child(3n+2){background:var(--peri)}
+html[data-skin="sticker"] .chips>.chip.sel{background:var(--lime);box-shadow:0 0 0 2px var(--navy)}
+html[data-skin="sticker"] .chips>.chip.ok{background:var(--ok-soft);color:var(--ok)}
+html[data-skin="sticker"] .chips>.chip.no{background:var(--bad-soft);color:var(--bad)}
+html[data-skin="sticker"] .build{border:2px dashed var(--navy);background:var(--surface)}
+html[data-skin="sticker"] .build .chip{background:var(--lime)}
+html[data-skin="sticker"] .slotbtn{border-style:dashed;background:var(--surface)}
+html[data-skin="sticker"] .slotbtn.filled{border-style:solid;background:var(--lime)}
+html[data-skin="sticker"] .slotbtn.sel{box-shadow:0 0 0 2px var(--navy);background:var(--peri)}
+html[data-skin="sticker"] .pool{background:var(--sunk);border:2px solid var(--navy)}
+html[data-skin="sticker"] .wtok{border-bottom-color:var(--navy)}
+html[data-skin="sticker"] .wtok.sel{background:var(--lime)}
+html[data-skin="sticker"] .sgroup{background:var(--surface);border-radius:14px}
+html[data-skin="sticker"] .sgroup:nth-child(3n+1){background:var(--lime-soft)}
+html[data-skin="sticker"] .sgroup:nth-child(3n+2){background:var(--sunk)}
+html[data-skin="sticker"] .sgroup.target{border-style:dashed;border-color:var(--navy)}
+html[data-skin="sticker"] .sgroup .chip{background:var(--surface)}
+html[data-skin="sticker"] .sgh{font-family:var(--f-hand);font-size:1.4rem;font-weight:700;line-height:1.1}
+html[data-skin="sticker"] .dd{border:2px solid var(--navy);background:var(--lime-soft);font-weight:600}
+
+@media (max-width:520px){
+  html[data-skin="sticker"] .wrap>header{padding:20px 16px}
+  html[data-skin="sticker"] .stat{padding:10px 10px}
+  html[data-skin="sticker"] .stat b{font-size:1.55rem}
+}
+@media (prefers-reduced-motion:reduce){html[data-skin="sticker"] .btn{transition:none}}

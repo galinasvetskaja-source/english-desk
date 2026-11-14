@@ -37,7 +37,7 @@ var COLS = {
   pending: ['id', 'tg_name', 'username', 'seen']
 };
 var CONTENT = ['homework', 'words', 'lessons', 'payments'];
-var SKINS = ['doodle', 'game', 'elegant'];
+var SKINS = ['doodle', 'game', 'elegant', 'sticker'];
 // Режимы повторения слов: интервальное повторение и шесть игр.
 var MODES = ['review', 'cards', 'context', 'speed', 'match', 'cross', 'spell'];
 var MAX_AGE_SEC = 7 * 24 * 3600;
