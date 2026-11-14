@@ -8,7 +8,7 @@
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script>try{document.documentElement.dataset.skin=localStorage.getItem('kd-skin-seen')||localStorage.getItem('kd-skin')||'doodle';}catch(e){document.documentElement.dataset.skin='doodle';}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800;900&family=Press+Start+2P&family=Exo+2:wght@400;500;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800;900&family=Press+Start+2P&family=Exo+2:wght@400;500;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Rubik:wght@500;700;800&family=Onest:wght@400;500;600;700&family=Caveat:wght@700&display=swap">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -661,8 +661,8 @@ function renderTop(){
   applySkin();
   renderNotice();
 }
-/* ---------- skins: doodle · game · elegant ---------- */
-const SKINS=[['doodle','Doodles','Рисунки'],['game','Game','Игра'],['elegant','Elegant','Элегантный']];
+/* ---------- skins: doodle · game · elegant · sticker ---------- */
+const SKINS=[['doodle','Doodles','Рисунки'],['game','Game','Игра'],['elegant','Elegant','Элегантный'],['sticker','Stickerbook','Стикербук']];
 const SKIN_IDS=SKINS.map(s=>s[0]);
 // Учитель выбирает свой вид на этом устройстве; у ученика стиль хранится на сервере (так его видят и ученик, и учитель).
 function ownSkin(){try{const v=localStorage.getItem('kd-skin');return SKIN_IDS.includes(v)?v:null;}catch(e){return null;}}
