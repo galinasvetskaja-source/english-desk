@@ -7,8 +7,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<script>try{document.documentElement.dataset.skin=localStorage.getItem('kd-skin-seen')||localStorage.getItem('kd-skin')||'doodle';}catch(e){document.documentElement.dataset.skin='doodle';}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800;900&family=Press+Start+2P&family=Exo+2:wght@400;500;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Rubik:wght@500;700;800&family=Onest:wght@400;500;600;700&family=Caveat:wght@700&display=swap">
+<script>document.documentElement.dataset.skin='sticker';</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Onest:wght@400;500;600;700&family=Caveat:wght@700&display=swap">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -52,6 +52,18 @@ button{cursor:pointer}
 .label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
 
 header{display:flex;flex-direction:column;gap:6px}
+.hinfo{display:flex;gap:12px 16px;align-items:center;justify-content:space-between;margin-top:6px}
+.hsched{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hsched ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;font-variant-numeric:tabular-nums}
+.hlabel{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.8}
+.hmuted{font-size:.88rem;opacity:.8;max-width:34ch}
+.hlinks{display:flex;flex-direction:column;gap:10px;margin-left:auto;flex:none}
+.hbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;padding:9px 16px;border-radius:999px;font-weight:700;text-decoration:none;background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.hico{font-size:1.05rem;line-height:1}
+.lirow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lirow select,.lirow input,.liurl{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0}
+.liurl{width:100%}
+.w .side .pill{font-size:.75rem;padding:2px 9px}
 .tbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);background:var(--teacher-soft);color:var(--teacher);font-size:.9rem}
 .tbar strong{font-weight:700}
 .tbar .sp{flex:1}
@@ -308,14 +320,13 @@ details.add textarea.big{min-height:140px;font-family:ui-monospace,Menlo,monospa
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-<link rel="stylesheet" href="skins.css?v=4">
+<link rel="stylesheet" href="skins.css?v=5">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <span class="label" id="eyebrow">Your English desk</span>
     <h1 id="hello">Hi!</h1>
-    <p class="muted" id="sub">Your homework, words from our lessons and your lesson balance, all in one place.</p>
+    <div class="hinfo" id="hinfo"></div>
   </header>
   <div id="tbar"></div>
   <div id="notice"></div>
@@ -419,7 +430,7 @@ const saveProg=()=>{if(canSaveOwn())queueWrite('progress/'+S.uid,()=>S.prog,0);}
 const saveHw=id=>{if(canSaveOwn())queueWrite('progress/'+S.uid+'/hw/'+id,()=>{const r=Object.assign({},S.myHw[id]);delete r.dirty;return r;});};
 function setHw(id,patch){const cur=S.prog.hw[id]||{};S.prog.hw[id]=Object.assign({},cur,patch,{at:new Date().toISOString()});render();saveProg();}
 function setKnown(id,v){if(v)S.prog.known[id]=true;else delete S.prog.known[id];render();saveProg();}
-async function tWrite(fn,ok){try{await fn();if(ok)toast(ok);}catch(e){toast('Не сохранилось: '+(e&&e.message?e.message:'ошибка'));}}
+async function tWrite(fn,ok){try{await fn();if(ok)toast(ok);}catch(e){toast(L('Could not save: ','Не сохранилось: ')+(e&&e.code==='offline'?L('no internet','нет интернета'):(e&&e.message?e.message:L('error','ошибка'))));}}
 
 /* ---------- homework engine ----------
    Every task type lives in one entry of TT:
@@ -649,36 +660,44 @@ function renderTop(){
       el('span',null,el('strong',{text:S.preview?'Просмотр глазами ученика':'Режим преподавателя'}),S.preview?' — так страницу видит ученик, сохранение отключено.':' — эту полосу и кнопки управления видите только вы.'),
       el('span',{class:'sp'}),
       el('button',{class:'btn t',id:'preview-toggle',onclick:()=>{S.preview=!S.preview;S.practice=null;render();}},S.preview?'Вернуться в режим учителя':'Посмотреть глазами ученика')));
-    $('#eyebrow').textContent=S.preview?L('Your English desk','Мой английский'):'Кабинет ученика';
-    $('#hello').textContent=S.preview?L('Hi, ','Привет, ')+firstName()+'!':(stName()||'Ваши ученики');
-    $('#sub').textContent=S.preview?subText():'Домашка, слова и баланс занятий. Ученик видит эту же страницу '+(((curStudent()||{}).lang)==='ru'?'на русском':'на английском')+', без кнопок управления.';
-  }else{
-    $('#eyebrow').textContent=L('Your English desk','Мой английский');
-    $('#hello').textContent=firstName()?L('Hi, ','Привет, ')+firstName()+'!':L('Hi!','Привет!');
-    $('#sub').textContent=subText();
   }
+  // Приветствие одинаковое на обоих языках: «Hi, Имя!»
+  $('#hello').textContent=isTeacherView()?(stName()?'Кабинет: '+stName():'Ваши ученики'):(firstName()?'Hi, '+firstName()+'!':'Hi!');
+  renderHeaderInfo();
   document.documentElement.lang=uiLang();
   applySkin();
   renderNotice();
 }
-/* ---------- skins: doodle · game · elegant · sticker ---------- */
-const SKINS=[['doodle','Doodles','Рисунки'],['game','Game','Игра'],['elegant','Elegant','Элегантный'],['sticker','Stickerbook','Стикербук']];
-const SKIN_IDS=SKINS.map(s=>s[0]);
-// Учитель выбирает свой вид на этом устройстве; у ученика стиль хранится на сервере (так его видят и ученик, и учитель).
-function ownSkin(){try{const v=localStorage.getItem('kd-skin');return SKIN_IDS.includes(v)?v:null;}catch(e){return null;}}
-function skinOf(){
-  if(S.role==='teacher'&&!S.preview)return ownSkin()||'doodle';
-  const st=curStudent();
-  if(st)return SKIN_IDS.includes(st.skin)?st.skin:'doodle';
-  try{const v=localStorage.getItem('kd-skin-seen');if(SKIN_IDS.includes(v))return v;}catch(e){}
-  return 'doodle';}
-function applySkin(){
-  const s=skinOf();const root=document.documentElement;
-  if(root.dataset.skin!==s){root.dataset.skin=s;syncHeader();}
-  try{localStorage.setItem('kd-skin-seen',s);}catch(e){}}
-function setOwnSkin(v){try{localStorage.setItem('kd-skin',v);}catch(e){}applySkin();render();}
+/* ---------- header: schedule (left), call + board buttons (right) ---------- */
+const DAYS_EN=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DAYS_RU=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const dayName=d=>(RU()?DAYS_RU:DAYS_EN)[d-1]||'';
+function callKind(u){u=String(u||'');if(/zoom\.(us|com)/i.test(u))return'Zoom';if(/meet\.google\./i.test(u))return'Google Meet';if(/telemost\.yandex/i.test(u))return L('Telemost','Телемост');return L('Call','Звонок');}
+const BOARDS={miro:['Miro','Miro'],holst:['Holst','Холст']};
+const boardName=b=>{const n=BOARDS[b]||BOARDS.miro;return isTeacherView()?n[1]:L(n[0],n[1]);};
+function openExt(u){if(!u)return;try{if(TG&&tgOK('6.1')){TG.openLink(u);return;}}catch(e){}window.open(u,'_blank','noopener');}
+function renderHeaderInfo(){
+  const box=$('#hinfo');box.replaceChildren();
+  const st=S.role==='teacher'||S.role==='student'?curStudent():null;
+  if(!st){box.hidden=true;return;}
+  const sch=[...(st.schedule||[])].sort((a,b)=>a.d-b.d||String(a.t).localeCompare(String(b.t)));
+  const left=el('div',{class:'hsched'});
+  if(sch.length){left.append(el('span',{class:'hlabel'},isTeacherView()?'Расписание':L('Our lessons','Наши занятия')));
+    left.append(el('ul',{id:'h-schedule'},sch.map(x=>el('li',null,el('b',null,dayName(x.d)),', '+x.t))));}
+  else if(isTeacherView())left.append(el('span',{class:'hmuted'},'Расписание и ссылки на звонок и доску задаются во вкладке ⚙'));
+  const right=el('div',{class:'hlinks'});
+  if(st.call_url)right.append(el('a',{class:'hbtn hbtn-call',id:'h-call',href:st.call_url,target:'_blank',rel:'noopener',
+    onclick:e=>{e.preventDefault();openExt(st.call_url);}},el('span',{class:'hico','aria-hidden':'true'},'📹'),callKind(st.call_url)));
+  if(st.board_url)right.append(el('a',{class:'hbtn hbtn-board',id:'h-board',href:st.board_url,target:'_blank',rel:'noopener',
+    onclick:e=>{e.preventDefault();openExt(st.board_url);}},el('span',{class:'hico','aria-hidden':'true'},'🖍'),boardName(st.board)));
+  box.hidden=!left.childNodes.length&&!right.childNodes.length;
+  box.append(left,right);
+}
+/* ---------- style: one look for everyone (Stickerbook) ---------- */
+const SKIN='sticker';
+function applySkin(){const root=document.documentElement;if(root.dataset.skin!==SKIN){root.dataset.skin=SKIN;syncHeader();}}
 
-/* ---------- settings: style, cabinet language, practice modes ---------- */
+/* ---------- settings: cabinet language, practice modes, lesson info ---------- */
 // Выключенные режимы хранятся у ученика (modes_off); пусто = включено всё. Менять могут и ученик, и учитель.
 const modeOff=()=>new Set((curStudent()||{}).modes_off||[]);
 const modeOn=id=>!modeOff().has(id);
@@ -702,13 +721,6 @@ function toggleMode(id,on){
   S.practice=null;
   setPref('setModes',{modes_off:list},{off:list});}
 const asTeacher=()=>S.role==='teacher';
-function swatches(cur,onPick,idp){
-  const box=el('div',{class:'skinbar'});
-  SKINS.forEach(([id,en,ru])=>{const name=RU()||asTeacher()?ru:en;
-    box.append(el('button',{type:'button',class:'sw sw-'+id,id:idp+id,title:name,'aria-label':name,'aria-pressed':cur===id?'true':'false',onclick:()=>onPick(id)}));});
-  const nm=SKINS.find(s=>s[0]===cur);
-  box.append(el('span',{class:'nm'},nm?(asTeacher()?nm[2]:L(nm[1],nm[2])):''));
-  return box;}
 function langSeg(cur,onPick,idp){
   return el('div',{class:'seg',role:'group','aria-label':asTeacher()?'Язык кабинета':L('Cabinet language','Язык кабинета')},
     el('button',{type:'button',id:idp+'en','aria-pressed':cur!=='ru'?'true':'false',onclick:()=>onPick('en')},'English'),
@@ -723,25 +735,52 @@ function modeList(){
 function renderSettings(){
   const sec=el('section',{'aria-labelledby':'tab-settings'});const T=asTeacher();const cur=curStudent();
   if(T){
-    sec.append(el('div',{class:'setbox'},el('h3',null,'Мой стиль'),
-      el('p',{class:'small muted'},'Так выглядит кабинет у вас на этом устройстве. Ученик выбирает свой стиль сам.'),
-      swatches(skinOf(),setOwnSkin,'skin-')));
     if(cur){
       sec.append(el('div',{class:'setbox'},el('h3',null,'Кабинет ученика: '+cur.name),
         el('p',{class:'small muted'},'Эти настройки ученик тоже может менять у себя. Они общие: что поменяете вы, увидит ученик, и наоборот.'),
         el('div',{class:'setgroup'},el('span',{class:'label'},'Язык кабинета'),langSeg(cur.lang,v=>setPref('setLang',{lang:v},{lang:v}),'st-lang-')),
-        el('div',{class:'setgroup'},el('span',{class:'label'},'Стиль'),swatches(SKIN_IDS.includes(cur.skin)?cur.skin:'doodle',v=>setPref('setSkin',{skin:v},{skin:v}),'st-skin-')),
         el('div',{class:'setgroup'},el('span',{class:'label'},'Режимы повторения слов'),modeList())));
-    }
+      sec.append(lessonInfoEditor(cur));
+    }else sec.append(el('div',{class:'empty'},'Сначала выберите или добавьте ученика.'));
     return sec;
   }
   sec.append(
-    el('div',{class:'setbox'},el('h3',null,L('Style','Стиль')),swatches(skinOf(),v=>setPref('setSkin',{skin:v},{skin:v}),'skin-')),
     el('div',{class:'setbox'},el('h3',null,L('Cabinet language','Язык кабинета')),langSeg(cur&&cur.lang,v=>setPref('setLang',{lang:v},{lang:v}),'lang-')),
     el('div',{class:'setbox'},el('h3',null,L('Word practice modes','Режимы повторения слов')),
       el('p',{class:'small muted'},L('Choose what you want to see in the Words tab.','Выберите, что показывать на вкладке «Слова».')),modeList()));
   return sec;
 }
+// Учитель: расписание, звонок и доска ученика (видны ученику в шапке). Черновик живёт в S.drafts, пока не нажата «Сохранить».
+function lessonInfoEditor(cur){
+  const key='li-'+cur.id;
+  const D=S.drafts[key]||(S.drafts[key]={schedule:clone(cur.schedule||[]),call_url:cur.call_url||'',board:cur.board||'miro',board_url:cur.board_url||''});
+  const box=el('div',{class:'setbox',id:'lesson-info'},el('h3',null,'Шапка кабинета: расписание и ссылки'),
+    el('p',{class:'small muted'},cur.name+' увидит это вверху кабинета: слева дни и время занятий, справа кнопки звонка и доски.'));
+  const rows=el('div',{class:'setrows'});
+  D.schedule.forEach((x,i)=>{
+    const day=el('select',{id:'li-day-'+i,'aria-label':'День'},DAYS_RU.map((n,di)=>el('option',{value:di+1,selected:x.d===di+1},n)));
+    day.addEventListener('change',()=>{x.d=+day.value;});
+    const tm=el('input',{type:'time',id:'li-time-'+i,value:x.t||'','aria-label':'Время',step:300});
+    tm.addEventListener('input',()=>{x.t=tm.value;});
+    rows.append(el('div',{class:'lirow'},day,tm,el('button',{class:'btn danger',type:'button',id:'li-del-'+i,onclick:()=>{D.schedule.splice(i,1);render();}},'Убрать')));});
+  const addDay=el('button',{class:'btn t',type:'button',id:'li-add',disabled:D.schedule.length>=7,onclick:()=>{D.schedule.push({d:1,t:'15:00'});render();}},'+ День занятия');
+  const call=el('input',{type:'url',id:'li-call',class:'liurl',placeholder:'https://zoom.us/j/… или https://meet.google.com/…',value:D.call_url});
+  call.addEventListener('input',()=>{D.call_url=call.value.trim();});
+  const bseg=el('div',{class:'seg',role:'group','aria-label':'Доска'},Object.keys(BOARDS).map(b=>el('button',{type:'button',id:'li-board-'+b,'aria-pressed':D.board===b?'true':'false',onclick:()=>{D.board=b;render();}},BOARDS[b][1])));
+  const burl=el('input',{type:'url',id:'li-board-url',class:'liurl',placeholder:D.board==='holst'?'Ссылка на доску в Холсте':'Ссылка на доску в Miro',value:D.board_url});
+  burl.addEventListener('input',()=>{D.board_url=burl.value.trim();});
+  const bad=u=>u&&!/^https:\/\/\S+$/i.test(u);
+  const save=el('button',{class:'btn primary',type:'button',id:'li-save',onclick:async()=>{
+    if(D.schedule.some(x=>!/^\d\d:\d\d$/.test(x.t||''))){toast('Укажите время у каждого дня');return;}
+    if(bad(D.call_url)||bad(D.board_url)){toast('Ссылка должна начинаться с https://');return;}
+    const r=await tCall('setLessonInfo',{student:cur.id,schedule:D.schedule,call_url:D.call_url,board:D.board,board_url:D.board_url},'Сохранено: ученик увидит это в шапке');
+    if(r)delete S.drafts[key];render();}},'Сохранить');
+  box.append(
+    el('div',{class:'setgroup'},el('span',{class:'label'},'Расписание'),rows,addDay),
+    el('div',{class:'setgroup'},el('span',{class:'label'},'Звонок (Zoom или Google Meet)'),call),
+    el('div',{class:'setgroup'},el('span',{class:'label'},'Доска'),bseg,burl),
+    el('div',{class:'row'},save,el('span',{class:'small muted'},'Пустое поле — кнопка не показывается.')));
+  return box;}
 function subText(){return L('Your homework, words from our lessons and your lesson balance, all in one place.','Домашка, слова с наших уроков и баланс занятий — всё в одном месте.');}
 function renderNotice(){
   const n=$('#notice');if(!n)return;n.replaceChildren();
@@ -799,11 +838,12 @@ function studentBar(){
 function renderSummary(){
   const p=progView();const total=S.hw.length;
   const done=S.hw.filter(h=>{const c=statusOf(h)[0];return c==='p-done'||c==='p-checked';}).length;
-  const known=S.words.filter(w=>learned(w.id)).length;
+  const known=S.words.filter(w=>learned(w.id)).length;const doingN=S.words.filter(w=>wordStatus(w.id)==='doing').length;
   const B=ledger();
   $('#summary').replaceChildren(
     el('div',{class:'stat'},el('span',{class:'label'},L('Homework done','Домашка сделана')),el('b',null,done+' / '+total),el('div',{class:'bar'},el('i',{style:'width:'+(total?Math.round(done/total*100):0)+'%'}))),
-    el('div',{class:'stat'},el('span',{class:'label'},L('Words learned','Слов выучено')),el('b',null,known+' / '+S.words.length),el('div',{class:'bar'},el('i',{style:'width:'+(S.words.length?Math.round(known/S.words.length*100):0)+'%'}))),
+    el('div',{class:'stat'},el('span',{class:'label'},L('Words learned','Слов выучено')),el('b',null,known+' / '+S.words.length),el('div',{class:'bar'},el('i',{style:'width:'+(S.words.length?Math.round(known/S.words.length*100):0)+'%'})),
+      doingN?el('span',{class:'small muted'},(isTeacherView()?'учит: ':L('in progress: ','учу: '))+doingN):null),
     el('div',{class:'stat'},el('span',{class:'label'},L('Lesson balance','Баланс')),el('b',{class:B.balance<0?'neg':null},signed(B.balance)),el('span',{class:'small muted'},B.balance<0?L('Not paid yet: ','Не оплачено: ')+B.unpaid.length:(L('lessons left','осталось уроков'))))
   );
 }
@@ -1021,6 +1061,10 @@ const SRS_DAYS=[0,1,3,7,14,30];const NEW_PER_SESSION=8;
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const srsOf=id=>(progView().srs||{})[id]||null;
 const learned=id=>{const s=srsOf(id);return!!s&&s.box>=3;};
+// Три статуса слова: new — ещё не тренировали; doing — было в повторении или в играх; learned — 3 раза вспомнили в повторении.
+function wordStatus(id){if(learned(id))return'learned';const p=progView();return(srsOf(id)||(p.wstat||{})[id])?'doing':'new';}
+const WSTATUS={new:['p-new','New','Новое'],doing:['p-doing','In progress','Учу'],learned:['p-done','Learned','Выучено']};
+function statusPill(id){const k=wordStatus(id);const [c,en,ru]=WSTATUS[k];return el('span',{class:'pill wpill '+c,'data-st':k},isTeacherView()?ru:L(en,ru));}
 function dueList(){const t=today();const old=[],fresh=[];
   for(const w of S.words){const s=srsOf(w.id);if(!s)fresh.push(w);else if(s.due<=t)old.push(w);}
   old.sort((a,b)=>String(srsOf(a.id).due).localeCompare(String(srsOf(b.id).due)));
@@ -1053,25 +1097,31 @@ function renderWords(){
   sec.append(el('div',{class:'review'},main,el('div',{class:'review-actions'},acts)));
   const search=el('input',{type:'search',id:'w-search',placeholder:L('Find a word','Найти слово'),value:S.q,'aria-label':L('Find a word','Найти слово')});
   search.addEventListener('input',()=>{S.q=search.value;const pos=search.selectionStart;render();const s=$('#w-search');if(s){s.focus();try{s.setSelectionRange(pos,pos);}catch(e){}}});
-  const opts=[['all',L('All words','Все слова')],['last',L('Last lesson','Последний урок')],['due',L('To review today','На сегодня')],['hard',L('Tricky words','Трудные слова')],['new',L('Not learned yet','Ещё не выучены')],['learned',L('Learned','Выучены')]];
+  const opts=[['all',L('All words','Все слова')],['last',L('Last lesson','Последний урок')],['due',L('To review today','На сегодня')],['hard',L('Tricky words','Трудные слова')],['new',L('New','Новые')],['doing',L('In progress','Учу')],['learned',L('Learned','Выучены')]];
   if(!opts.some(o=>o[0]===S.lesson))S.lesson='all';
   const sel=el('select',{id:'w-filter','aria-label':L('Filter','Фильтр')},opts.map(([v,t])=>el('option',{value:v,selected:S.lesson===v},t)));
   sel.addEventListener('change',()=>{S.lesson=sel.value;render();});
   sec.append(el('div',{class:'tools'},search,sel,langToggle()));
   const lastIds=new Set(lastW.map(w=>w.id));const dueIds=new Set(D.today.map(w=>w.id));
-  let list=S.words.filter(w=>S.lesson==='all'||(S.lesson==='last'&&lastIds.has(w.id))||(S.lesson==='due'&&dueIds.has(w.id))||(S.lesson==='hard'&&(wst[w.id]||[0,0])[1]>0)||(S.lesson==='new'&&!learned(w.id))||(S.lesson==='learned'&&learned(w.id)));
+  let list=S.words.filter(w=>S.lesson==='all'||(S.lesson==='last'&&lastIds.has(w.id))||(S.lesson==='due'&&dueIds.has(w.id))||(S.lesson==='hard'&&(wst[w.id]||[0,0])[1]>0)||(['new','doing','learned'].includes(S.lesson)&&wordStatus(w.id)===S.lesson));
   const q=S.q.trim().toLowerCase();
   if(q)list=list.filter(w=>(w.word+' '+w.meaning+' '+(w.ru||'')+' '+exampleText(w)).toLowerCase().includes(q));
   if(S.lesson==='hard')list.sort((a,b)=>(wst[b.id]||[0,0])[1]-(wst[a.id]||[0,0])[1]);else list.sort((a,b)=>ansOf(a).localeCompare(ansOf(b)));
   if(T&&((p.best||{}).speed||Object.keys(wst).length))sec.append(el('p',{class:'small muted'},'Лучший результат в Speed round: '+((p.best||{}).speed||0)+'. У каждого слова: уровень запоминания (точки) и ✓/✗ в играх.'));
   if(!list.length){sec.append(el('div',{class:'empty'},L('No words here.','Здесь пока нет слов.')));return sec;}
+  const cnt={new:0,doing:0,learned:0};for(const w of S.words)cnt[wordStatus(w.id)]++;
+  sec.append(el('p',{class:'small muted',id:'w-howto'},T?'Новое — слово ещё не тренировали. Учу — было в повторении или в играх. Выучено — ученик 3 раза вспомнил его в повторении (через 1, 3 и 7 дней).'
+    :L('New: not practised yet. In progress: you have practised it. Learned: you remembered it 3 times in Spaced review (after 1, 3 and 7 days).','Новое — ещё не тренировали. Учу — уже тренировали. Выучено — вы 3 раза вспомнили слово в повторении (через 1, 3 и 7 дней).')));
   sec.append(el('div',{class:'row'},el('span',{class:'small muted'},nWords(list.length)),
     list.length!==S.words.length?el('button',{class:'btn',type:'button',id:'play-filtered',onclick:()=>startGames(list.map(w=>w.id))},L('Play with these words','Игры с этими словами')):null));
   const box=el('div',{class:'words'});
   for(const w of list){
-    const side=el('div',{class:'side'},dots(w.id));
+    const side=el('div',{class:'side'},statusPill(w.id),dots(w.id));
     if(T){const ws2=wst[w.id];if(ws2)side.append(el('span',{class:'small muted',title:'верно / ошибок в играх'},'✓'+ws2[0]+' ✗'+ws2[1]));
       side.append(confirmBtn('Удалить','Точно?',()=>tWrite(()=>S.db.doc('words/'+w.id).delete(),'Слово удалено'),'wdel-'+w.id));}
+    else side.append(confirmBtn(L('Delete','Удалить'),L('Sure?','Точно?'),()=>{
+      if(S.role==='teacher'){toast(L('Preview: nothing is saved','Просмотр: ничего не сохраняется'));return;}
+      tWrite(()=>S.db.doc('words/'+w.id).delete(),L('Word deleted','Слово удалено'));},'wdel-'+w.id));
     const main=T?[el('div',null,w.meaning),w.ru?el('div',{class:'small muted'},w.ru):null]:[el('div',null,hintOf(w))];
     box.append(el('div',{class:'w'},el('div',{class:'term'},el('mark',null,w.word),sayBtn(w.word,'say-'+w.id,L('Listen to the word','Послушать слово'))),side,...main,exampleText(w)?el('div',{class:'ex'},exampleText(w),sayBtn(exampleText(w),'sayx-'+w.id,L('Listen to the example','Послушать пример'))):null));
   }
@@ -1093,7 +1143,9 @@ function renderSrs(P){
       st.show?el('div',null,el('span',{class:'answer'},w.word),sayBtn(w.word,'rv-say')):el('p',{class:'muted small'},L('Remember the word and say it out loud.','Вспомните слово и скажите его вслух.')),
       st.show&&exampleText(w)?el('p',{class:'muted',style:'font-style:italic'},exampleText(w),sayBtn(exampleText(w),'rv-sayx',L('Listen to the example','Послушать пример'))):null,
       st.show?el('div',{class:'row',style:'justify-content:center'},el('button',{class:'btn',type:'button',id:'rv-again',onclick:()=>answer(false)},L('I didn’t know','Не помню')),el('button',{class:'btn primary',type:'button',id:'rv-knew',onclick:()=>answer(true)},L('I knew it','Помню'))):
-        el('button',{class:'btn primary',type:'button',id:'rv-show',onclick:()=>{st.show=true;render();}},L('Show the word','Показать слово'))));
+        el('button',{class:'btn primary',type:'button',id:'rv-show',onclick:()=>{st.show=true;render();
+          // Слово сразу звучит, как только появилось на карточке (это нажатие — разрешение браузеру говорить).
+          say(speakText(w.word),$('#rv-say'));}},L('Show the word','Показать слово'))));
 }
 
 /* ---------- practice modes ---------- */

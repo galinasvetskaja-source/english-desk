@@ -463,11 +463,20 @@ html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy) 
   padding:22px 20px 22px;margin:4px 6px 4px 0;gap:8px;box-shadow:6px 6px 0 var(--lime),6px 6px 0 var(--bw) var(--navy)}
 html[data-skin="sticker"] .wrap>header::before{content:"";position:absolute;top:-14px;right:22px;width:40px;height:40px;background:var(--k-spark) center/contain no-repeat;transform:rotate(12deg);pointer-events:none}
 html[data-skin="sticker"] .wrap>header::after{content:"";position:absolute;top:22px;right:-10px;width:30px;height:27px;background:var(--k-heart) center/contain no-repeat;transform:rotate(14deg);pointer-events:none}
-html[data-skin="sticker"] #eyebrow{align-self:flex-start;font-family:var(--f-hand);font-size:1.35rem;font-weight:700;line-height:1.1;text-transform:none;letter-spacing:0;color:var(--navy);
-  background:var(--lime);padding:2px 12px 3px;border-radius:6px;transform:rotate(-2.5deg);box-shadow:3px 3px 0 var(--navy-deep)}
-html[data-skin="sticker"] #hello{color:#fff;padding-right:34px}
-html[data-skin="sticker"] #hello::after{content:"";display:block;width:120px;height:14px;margin-top:8px;background:var(--k-wave) left center/contain no-repeat}
-html[data-skin="sticker"] #sub{color:var(--on-navy);max-width:46ch}
+/* header: "Hi, Name!" on a tilted lime plaque; schedule left, call + board buttons right */
+html[data-skin="sticker"] #hello{align-self:flex-start;font-family:var(--f-hand);font-size:clamp(2rem,8vw,2.6rem);font-weight:700;line-height:1.05;letter-spacing:0;color:var(--navy);
+  background:var(--lime);padding:4px 18px 6px;border-radius:8px;transform:rotate(-2deg);box-shadow:4px 4px 0 var(--navy-deep);margin:4px 30px 6px 2px;text-wrap:balance}
+html[data-skin="sticker"] .hinfo{margin-top:8px;color:#fff}
+html[data-skin="sticker"] .hlabel{font-family:var(--f-display);color:var(--lime);opacity:1}
+html[data-skin="sticker"] .hsched ul{font-size:1.05rem;color:#fff}
+html[data-skin="sticker"] .hsched b{font-family:var(--f-display);font-weight:700}
+html[data-skin="sticker"] .hmuted{color:var(--on-navy);opacity:1}
+html[data-skin="sticker"] .hbtn{border:var(--bw) solid var(--navy-deep);font-family:var(--f-display);color:var(--navy);box-shadow:3px 3px 0 var(--navy-deep);transition:transform .08s,box-shadow .08s}
+html[data-skin="sticker"] .hbtn-call{background:var(--lime)}
+html[data-skin="sticker"] .hbtn-board{background:var(--peri)}
+html[data-skin="sticker"] .hbtn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--navy-deep)}
+html[data-skin="sticker"] .hbtn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--navy-deep)}
+html[data-skin="sticker"] :is(.lirow select,.lirow input,.liurl){border:2px solid var(--navy);border-radius:14px}
 html[data-skin="sticker"] .skinbar .sw{border:var(--bw) solid var(--navy)}
 html[data-skin="sticker"] .skinbar .sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5.5px var(--navy)}
 

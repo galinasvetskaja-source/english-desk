@@ -27,7 +27,7 @@ var TABS = {
   pending: 'Ожидают'
 };
 var COLS = {
-  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang', 'skin', 'modes_off'],
+  students: ['id', 'name', 'tg_id', 'tg_name', 'invite', 'created', 'lang', 'skin', 'modes_off', 'schedule', 'call_url', 'board', 'board_url'],
   homework: ['id', 'student', 'date', 'title', 'focus', 'url', 'checked', 'tasks'],
   words: ['id', 'student', 'word', 'meaning', 'ru', 'example', 'cloze', 'lesson'],
   lessons: ['id', 'student', 'date', 'kind', 'note'],
@@ -37,7 +37,8 @@ var COLS = {
   pending: ['id', 'tg_name', 'username', 'seen']
 };
 var CONTENT = ['homework', 'words', 'lessons', 'payments'];
-var SKINS = ['doodle', 'game', 'elegant', 'sticker'];
+var SKINS = ['sticker', 'doodle', 'game', 'elegant']; // в кабинете сейчас только 'sticker'
+var BOARDS = ['miro', 'holst'];
 // Режимы повторения слов: интервальное повторение и шесть игр.
 var MODES = ['review', 'cards', 'context', 'speed', 'match', 'cross', 'spell'];
 var MAX_AGE_SEC = 7 * 24 * 3600;
@@ -162,7 +163,7 @@ function teacherAction(a, req) {
   if (a === 'setSkin') {
     return withLock(function () {
       var s = mustStudent(req.student);
-      s.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'doodle';
+      s.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'sticker';
       writeRow('students', s); return { students: listStudents() };
     });
   }
@@ -170,6 +171,17 @@ function teacherAction(a, req) {
     return withLock(function () {
       var s = mustStudent(req.student);
       s.modes_off = encodeModesOff(req.off);
+      writeRow('students', s); return { students: listStudents() };
+    });
+  }
+  // Шапка кабинета: расписание, ссылка на звонок (Zoom / Meet) и доска (Miro / Холст).
+  if (a === 'setLessonInfo') {
+    return withLock(function () {
+      var s = mustStudent(req.student);
+      s.schedule = cleanSchedule(req.schedule);
+      s.call_url = cleanUrl(req.call_url);
+      s.board = BOARDS.indexOf(req.board) >= 0 ? req.board : 'miro';
+      s.board_url = cleanUrl(req.board_url);
       writeRow('students', s); return { students: listStudents() };
     });
   }
@@ -240,7 +252,7 @@ function studentAction(a, req, me) {
   }
   if (a === 'setSkin') {
     return withLock(function () {
-      me.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'doodle';
+      me.skin = SKINS.indexOf(req.skin) >= 0 ? req.skin : 'sticker';
       writeRow('students', me); return { student: publicStudent(me) };
     });
   }
@@ -248,6 +260,16 @@ function studentAction(a, req, me) {
     return withLock(function () {
       me.modes_off = encodeModesOff(req.off);
       writeRow('students', me); return { student: publicStudent(me) };
+    });
+  }
+  // Ученик может удалить только своё слово (другие разделы удаляет только учитель).
+  if (a === 'del') {
+    if (req.coll !== 'words') throw new Error('Нет доступа');
+    return withLock(function () {
+      var w = findBy('words', 'id', String(req.id));
+      if (!w || w.student !== me.id) throw new Error('Слово не найдено');
+      removeRow('words', w.id);
+      return { ok: true };
     });
   }
   if (a === 'saveProgress') {
@@ -283,10 +305,30 @@ function loadFor(s) {
 
 function listStudents() {
   return readAll('students').map(function (s) {
-    return { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) };
+    return withInfo(s, { id: s.id, name: s.name, invite: s.invite || '', linked: !!s.tg_id, tg_name: s.tg_name || '', lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) });
   });
 }
-function publicStudent(s) { return { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) }; }
+function publicStudent(s) { return withInfo(s, { id: s.id, name: s.name, lang: s.lang === 'ru' ? 'ru' : 'en', skin: skinOf(s), modes_off: modesOff(s) }); }
+function withInfo(s, o) {
+  o.schedule = cleanSchedule(s.schedule);
+  o.call_url = cleanUrl(s.call_url);
+  o.board = BOARDS.indexOf(s.board) >= 0 ? s.board : 'miro';
+  o.board_url = cleanUrl(s.board_url);
+  return o;
+}
+// Расписание: до 7 строк { d: 1..7 (пн..вс), t: 'ЧЧ:ММ' }.
+function cleanSchedule(v) {
+  if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = []; } }
+  if (!Array.isArray(v)) return [];
+  return v.map(function (x) {
+    var d = Number(x && x.d); var t = String((x && x.t) || '');
+    return (d >= 1 && d <= 7 && /^([01]\d|2[0-3]):[0-5]\d$/.test(t)) ? { d: d, t: t } : null;
+  }).filter(Boolean).slice(0, 7);
+}
+function cleanUrl(u) {
+  u = String(u || '').trim();
+  return /^https:\/\/[^\s]+$/i.test(u) && u.length <= 500 ? u : '';
+}
 // Режимы повторения, которые выключены (в таблице — через запятую). Пусто = включено всё.
 function modesOff(s) {
   return String(s.modes_off || '').split(',').filter(function (m) { return MODES.indexOf(m) >= 0; });
@@ -296,7 +338,7 @@ function encodeModesOff(list) {
   if (off.length >= MODES.length) off = []; // нельзя выключить всё
   return off.join(',');
 }
-function skinOf(s) { return SKINS.indexOf(s.skin) >= 0 ? s.skin : 'doodle'; }
+function skinOf(s) { return 'sticker'; }
 function mustStudent(id) {
   var s = findBy('students', 'id', String(id || ''));
   if (!s) throw new Error('Ученик не найден');
