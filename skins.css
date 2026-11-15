@@ -446,7 +446,7 @@ html:root[data-skin="sticker"]{
   --k-arrow:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 60 40%27%3E%3Cpath d=%27M4 30C14 6 30 4 34 16C37 25 26 28 25 20C24 12 38 8 52 14%27 stroke=%27%23101585%27 stroke-width=%272.6%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3Cpath d=%27M45 8L53 14L45 19%27 stroke=%27%23101585%27 stroke-width=%272.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
   --k-wave:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 14%27%3E%3Cpath d=%27M3 8Q13 1 23 8T43 8T63 8T83 8T103 8T117 6%27 stroke=%27%23DDFD52%27 stroke-width=%273.5%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
   --k-wave-n:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 14%27%3E%3Cpath d=%27M3 8Q13 1 23 8T43 8T63 8T83 8T103 8T117 6%27 stroke=%27%23101585%27 stroke-width=%273%27 stroke-linecap=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
-  --k-dots:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 22 22%27%3E%3Ccircle cx=%2711%27 cy=%2711%27 r=%271.6%27 fill=%27%23DDFD52%27 fill-opacity=%27.55%27/%3E%3C/svg%3E");
+  --k-dots:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 56 56%27%3E%3Ccircle cx=%2714%27 cy=%2714%27 r=%276%27 fill=%27%23DDFD52%27 fill-opacity=%27.28%27/%3E%3Ccircle cx=%2742%27 cy=%2742%27 r=%276%27 fill=%27%23DDFD52%27 fill-opacity=%27.28%27/%3E%3C/svg%3E");
   --k-check:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%2710%27 fill=%27%23DDFD52%27 stroke=%27%23101585%27 stroke-width=%272%27/%3E%3Cpath d=%27M7.5 12.3L10.6 15.3L16.5 9%27 stroke=%27%23101585%27 stroke-width=%272.3%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 fill=%27none%27/%3E%3C/svg%3E");
 }
 html[data-skin="sticker"] body{background-color:var(--bg);background-image:none;font-size:16.5px;line-height:1.6}
@@ -459,7 +459,7 @@ html[data-skin="sticker"] .wrap{gap:22px}
 html[data-skin="sticker"] :is(#tbar,#notice):empty{display:none}
 
 /* first screen: navy sticker with lime dots, handwritten lime label, sparkles */
-html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy) var(--k-dots) 0 0/22px 22px;color:#fff;border:var(--bw) solid var(--navy);border-radius:26px;
+html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy) var(--k-dots) 0 0/56px 56px;color:#fff;border:var(--bw) solid var(--navy);border-radius:26px;
   padding:22px 20px 22px;margin:4px 6px 4px 0;gap:8px;box-shadow:6px 6px 0 var(--lime),6px 6px 0 var(--bw) var(--navy)}
 html[data-skin="sticker"] .wrap>header::before{content:"";position:absolute;top:-14px;right:22px;width:40px;height:40px;background:var(--k-spark) center/contain no-repeat;transform:rotate(12deg);pointer-events:none}
 html[data-skin="sticker"] .wrap>header::after{content:"";position:absolute;top:22px;right:-10px;width:30px;height:27px;background:var(--k-heart) center/contain no-repeat;transform:rotate(14deg);pointer-events:none}
