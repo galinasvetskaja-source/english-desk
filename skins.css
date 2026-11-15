@@ -459,7 +459,7 @@ html[data-skin="sticker"] .wrap{gap:22px}
 html[data-skin="sticker"] :is(#tbar,#notice):empty{display:none}
 
 /* first screen: navy sticker with lime dots, handwritten lime label, sparkles */
-html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy) var(--k-dots) 0 0/56px 56px;color:#fff;border:var(--bw) solid var(--navy);border-radius:26px;
+html[data-skin="sticker"] .wrap>header{position:relative;background:var(--navy);color:#fff;border:var(--bw) solid var(--navy);border-radius:26px;
   padding:22px 20px 22px;margin:4px 6px 4px 0;gap:8px;box-shadow:6px 6px 0 var(--lime),6px 6px 0 var(--bw) var(--navy)}
 html[data-skin="sticker"] .wrap>header::before{content:"";position:absolute;top:-14px;right:22px;width:40px;height:40px;background:var(--k-spark) center/contain no-repeat;transform:rotate(12deg);pointer-events:none}
 html[data-skin="sticker"] .wrap>header::after{content:"";position:absolute;top:22px;right:-10px;width:30px;height:27px;background:var(--k-heart) center/contain no-repeat;transform:rotate(14deg);pointer-events:none}
